@@ -4,6 +4,9 @@ model Resume {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   label String
+  approvedAt DateTime? @map("approved_at")
+  approvedVersion Int? @map("approved_version")
+  active Boolean @default(true)
 
   sourceFilename  String? @map("source_filename")
   sourceMimeType  String? @map("source_mime_type")

@@ -1,0 +1,66 @@
+enum MissingSalaryPolicy {
+  allow
+  review
+  skip
+  @@map("missing_salary_policy")
+}
+
+enum SearchFrequency {
+  hourly
+  three_times_daily
+  manual
+  @@map("search_frequency")
+}
+
+enum ResumeSelection {
+  auto
+  manual
+  fixed
+  @@map("resume_selection")
+}
+
+enum WorkArrangement {
+  Remote
+  Hybrid
+  OnSite
+  @@map("work_arrangement")
+}
+
+// Versioned preferences for the new API; legacy skill defaults remain in AutoApplySettings.
+model AutoApplyPolicy {
+  userId String @id @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version Int @default(1)
+  autoApplyRequested Boolean @map("auto_apply_requested")
+  minimumSalaryUSD Int @map("minimum_salary_usd")
+  unlistedSalary MissingSalaryPolicy @map("unlisted_salary")
+  roles String[]
+  location String
+  workArrangements WorkArrangement[] @map("work_arrangements")
+  maxDailyApplications Int @map("max_daily_applications")
+  searchFrequency SearchFrequency @map("search_frequency")
+  timeZone String @map("time_zone")
+  runHours Int[] @map("run_hours")
+  resumeSelection ResumeSelection @map("resume_selection")
+  // Keep the preference if a resume is deleted; resolve its current approval before any use.
+  fixedResumeId String? @map("fixed_resume_id")
+  minimumMatchScore Int @map("minimum_match_score")
+  approvalForExceptions Boolean @map("approval_for_exceptions")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("auto_apply_policies")
+}
+
+model AutoApplyAuditEvent {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actorTokenId String @map("actor_token_id")
+  previousVersion Int @map("previous_version")
+  version Int
+  previousPreferences Json? @map("previous_preferences")
+  preferences Json
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([userId, version])
+  @@index([userId, createdAt])
+  @@map("auto_apply_audit_events")
+}

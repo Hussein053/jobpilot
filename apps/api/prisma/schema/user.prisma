@@ -76,6 +76,8 @@ model User {
 
   resumes              Resume[]
   autoApply            AutoApplySettings?
+  autoApplyPolicy      AutoApplyPolicy?
+  autoApplyAuditEvents AutoApplyAuditEvent[]
   applications         Application[]
   campaigns            Campaign[]
   credentials          Credential[]
