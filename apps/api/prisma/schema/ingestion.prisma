@@ -1,0 +1,25 @@
+// Only public verification material belongs here; never n8n private keys or API credentials.
+model IngestionIntegration {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publicKeyPem String @map("public_key_pem")
+  active Boolean @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  runs IngestionRun[]
+  @@index([userId])
+  @@map("ingestion_integrations")
+}
+
+model IngestionRun {
+  id String @id @default(uuid())
+  integrationId String @map("integration_id")
+  integration IngestionIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  runId String @map("run_id")
+  bodyDigest String @map("body_digest")
+  batch Json
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([integrationId, runId])
+  @@index([integrationId, createdAt])
+  @@map("ingestion_runs")
+}

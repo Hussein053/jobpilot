@@ -23,6 +23,7 @@ import { emailMessagesController } from "@/modules/email/messages.controller";
 import { emailOAuthController } from "@/modules/email/oauth.controller";
 import { executionController } from "@/modules/execution/execution.controller";
 import { healthController } from "@/modules/health/health.controller";
+import { ingestionController } from "@/modules/ingestion/ingestion.controller";
 import { adminBoardController } from "@/modules/job-board/admin-board.controller";
 import { jobBoardController } from "@/modules/job-board/job-board.controller";
 import { adminJobListingController } from "@/modules/job-listing/admin-listing.controller";
@@ -69,6 +70,7 @@ const app = new Elysia()
       .use(securityController)
       .use(authProvidersController)
       .use(healthController)
+      .use(ingestionController)
       .use(executionController)
       .use(autoApplyController)
       .use(jobBoardController)

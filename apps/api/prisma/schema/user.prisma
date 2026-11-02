@@ -78,6 +78,7 @@ model User {
   autoApply            AutoApplySettings?
   autoApplyPolicy      AutoApplyPolicy?
   autoApplyAuditEvents AutoApplyAuditEvent[]
+  ingestionIntegrations IngestionIntegration[]
   applications         Application[]
   campaigns            Campaign[]
   credentials          Credential[]
