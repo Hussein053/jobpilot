@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { AUTO_APPLY_DEFAULTS } from "@jobpilot/contracts/auto-apply";
 import { EMPTY_RESUME_DATA } from "@jobpilot/contracts/resume";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -102,12 +103,13 @@ export function previewFixture() {
         };
       });
       const runId = crypto.randomUUID();
+      const batch = { schemaVersion: 1, runId, jobs };
       return db.ingestionRun.create({
         data: {
           integrationId,
           runId,
-          bodyDigest: "fixture",
-          batch: toInputJson({ schemaVersion: 1, runId, jobs }),
+          bodyDigest: createHash("sha256").update(JSON.stringify(batch)).digest("hex"),
+          batch: toInputJson(batch),
         },
       });
     },

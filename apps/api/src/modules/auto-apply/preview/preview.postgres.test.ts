@@ -1,5 +1,5 @@
 import { previewFixture } from "./preview-fixture";
-import { afterAll, beforeAll, describe, expect, spyOn, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 const f = previewFixture();
 describe.skipIf(!f.enabled)("policy preview preservation on isolated PostgreSQL", () => {
@@ -111,8 +111,8 @@ describe.skipIf(!f.enabled)("policy preview preservation on isolated PostgreSQL"
     });
     const run = await f.run();
     const before = await f.db.dryRunSimulation.count({ where: { userId: f.owner } });
-    const fault = spyOn(f.db.dryRunReservation, "createMany").mockRejectedValueOnce(
-      new Error("Synthetic allocation fault"),
+    await f.db.$executeRawUnsafe(
+      "ALTER TABLE dry_run_reservations ADD CONSTRAINT fixture_reject_reservation CHECK (false) NOT VALID",
     );
     try {
       await expect(
@@ -121,9 +121,11 @@ describe.skipIf(!f.enabled)("policy preview preservation on isolated PostgreSQL"
           ingestionRunId: run.id,
           expectedSettingsVersion: 2,
         }),
-      ).rejects.toThrow("Synthetic allocation fault");
+      ).rejects.toThrow();
     } finally {
-      fault.mockRestore();
+      await f.db.$executeRawUnsafe(
+        "ALTER TABLE dry_run_reservations DROP CONSTRAINT fixture_reject_reservation",
+      );
     }
     expect(await f.db.dryRunSimulation.count({ where: { userId: f.owner } })).toBe(before);
     expect(await f.db.dryRunReservation.count({ where: { userId: f.owner } })).toBe(2);
