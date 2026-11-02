@@ -41,6 +41,17 @@ export const authQueries = {
   me: () => ({ queryKey: queryKeys.auth.me(), queryFn: () => api.auth.me.get() }),
 };
 
+export const autoApplyQueries = {
+  settings: () => ({
+    queryKey: queryKeys.autoApply.settings(),
+    queryFn: () => api["auto-apply"].settings.get(),
+  }),
+  audit: (query: PaginationQuery) => ({
+    queryKey: queryKeys.autoApply.audit(query.page, query.limit),
+    queryFn: () => api["auto-apply"].audit.get({ query }),
+  }),
+};
+
 export const userQueries = {
   detail: () => ({ queryKey: queryKeys.user.detail(), queryFn: () => api.user.get() }),
   portfolio: () => ({

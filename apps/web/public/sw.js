@@ -1,6 +1,36 @@
 // Plain service worker (served from /sw.js, not bundled). Renders Pilot web-push
 // notifications and routes clicks. Payload is JSON { title, body, url?, tag? }.
 
+const SHELL_CACHE = "jobpilot-shell-v1";
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(SHELL_CACHE).then((cache) => cache.addAll(["/offline.html", "/icon-192.png"])),
+  );
+});
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key.startsWith("jobpilot-shell-") && key !== SHELL_CACHE)
+            .map((key) => caches.delete(key)),
+        ),
+      ),
+  );
+});
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET" || event.request.mode !== "navigate") return;
+  if (new URL(event.request.url).origin !== self.location.origin) return;
+  // Never cache authenticated HTML, API responses, resumes, or answers.
+  event.respondWith(
+    fetch(event.request).catch(
+      async () => (await caches.match("/offline.html")) || Response.error(),
+    ),
+  );
+});
+
 self.addEventListener("push", (event) => {
   let payload = {};
   if (event.data) {
@@ -25,11 +55,17 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = event.notification.data?.url || "/pilot";
+  let target = "/pilot";
+  try {
+    const requested = new URL(event.notification.data?.url || "/pilot", self.location.origin);
+    if (requested.origin === self.location.origin) target = requested.pathname + requested.search;
+  } catch {
+    // A malformed push URL must still open the app safely.
+  }
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
       for (const client of windows) {
-        if (client.url.includes(target) && "focus" in client) {
+        if (client.url === new URL(target, self.location.origin).href && "focus" in client) {
           return client.focus();
         }
       }

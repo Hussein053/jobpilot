@@ -1,4 +1,10 @@
 export const queryKeys = {
+  autoApply: {
+    all: ["auto-apply"] as const,
+    settings: () => [...queryKeys.autoApply.all, "settings"] as const,
+    audit: (page: number, limit: number) =>
+      [...queryKeys.autoApply.all, "audit", page, limit] as const,
+  },
   auth: {
     all: ["auth"] as const,
     me: () => [...queryKeys.auth.all, "me"] as const,
