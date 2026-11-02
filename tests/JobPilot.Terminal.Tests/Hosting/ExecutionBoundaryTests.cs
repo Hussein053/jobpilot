@@ -10,15 +10,26 @@ namespace JobPilot.Terminal.Tests;
 
 public sealed class ExecutionBoundaryTests
 {
-    [Fact]
-    public async Task Updater_CannotReplaceTheGuardedBuild()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Updater_CannotReplaceTheGuardedBuild(bool publishedInstall)
     {
         using var http = new HttpClient(new RejectNetwork());
-        var updater = new HostUpdater(http, new HostInstall(paths: null), NullLogger<HostUpdater>.Instance);
+        using var temp = new TempDir();
+        temp.WriteValidPluginTree();
+        var binary = temp.File("jobpilot", "guarded executable fixture");
+        var plugin = Path.Combine(temp.Root, "plugin", ".mcp.json");
+        var before = File.ReadAllText(plugin);
+        var install = new HostInstall(new InstallPaths { WorkingDir = temp.Root, PluginDir = Path.Combine(temp.Root, "plugin") }, canUpdate: publishedInstall);
+        var updater = new HostUpdater(http, install, NullLogger<HostUpdater>.Instance);
         Assert.False(await updater.UpdateAtStartupAsync());
         var result = await updater.UpdateNowAsync(TestContext.Current.CancellationToken);
         Assert.False(result.Updating);
         Assert.Equal("dry-run", result.Reason);
+        Assert.Equal("guarded executable fixture", File.ReadAllText(binary));
+        Assert.Equal(before, File.ReadAllText(plugin));
+        Assert.False(Directory.Exists(temp.Root + ".new"));
     }
 
     [Theory]

@@ -1,4 +1,4 @@
-import { setup } from "./fakes";
+import { APPLIED_AT, setup } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("CampaignJobService queued rows", () => {
@@ -44,5 +44,24 @@ describe("CampaignJobService dry-run execution boundary", () => {
         status: "applying",
       }),
     ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe("duplicate refusal remains independent of execution authorization", () => {
+  it("records a detected duplicate as skipped without starting an application", async () => {
+    const state = setup();
+    state.setStatus("approved");
+    state.setApplication({
+      id: "existing",
+      url: state.job.url,
+      title: state.job.title,
+      company: state.job.company,
+      appliedAt: new Date(APPLIED_AT),
+      status: "applied",
+    });
+    await expect(state.checkDuplicate()).rejects.toThrow("recorded as skipped");
+    expect(state.job).toMatchObject({ status: "skipped", skipReason: "Already applied (url)" });
+    expect(state.applicationUpserts).toBe(0);
+    await expect(state.startApplying()).rejects.toMatchObject({ status: 403 });
   });
 });

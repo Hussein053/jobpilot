@@ -24,7 +24,8 @@ import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned, PROMOTABLE_SOURCES } from "../campaign.utils";
 import { assertNotDuplicateApply, guardApply } from "./apply-guard";
 import { publishJob, publishProgress, publishStatusChange } from "./job-events";
-import { isTerminalJob, writeJobResult } from "./job-result";
+import { writeJobResult } from "./job-result";
+import { isTerminalJob } from "./job-result.store";
 import { JOB_INCLUDE, type JobRow } from "./job-row";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {

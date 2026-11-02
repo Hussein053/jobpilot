@@ -1,11 +1,13 @@
+import type { CampaignJobResultInput } from "@jobpilot/contracts/campaign";
 // Shared fake-Prisma scaffolding for the CampaignJobService suites: one mutable job row plus the
 // application/variant/cover-letter writes its result path touches.
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { makeBoards } from "@/modules/job-board/job-board.fake";
 import type { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
-import { guardApply, startApplying } from "./apply-guard";
+import { assertNotDuplicateApply, guardApply, startApplying } from "./apply-guard";
 import { CampaignJobService } from "./job.service";
+import { persistJobResult } from "./job-result.store";
 
 /** Relative to now, so the duplicate fixtures stay inside the window as the calendar moves. */
 export const APPLIED_AT = new Date(Date.now() - 5 * DAY_MS).toISOString();
@@ -40,6 +42,10 @@ export function setup() {
   };
   let application: Record<string, unknown> | null = null;
   let applicationUpserts = 0;
+  let eventWrites = 0;
+  let transactionCalls = 0;
+  let transactionRollbacks = 0;
+  let failCoverLetterLink = false;
   const variantLinks: { where: Record<string, unknown>; data: Record<string, unknown> }[] = [];
   const coverLetterLinks: { where: Record<string, unknown>; data: Record<string, unknown> }[] = [];
   const campaign = { source: "auto_apply" as const };
@@ -95,6 +101,7 @@ export function setup() {
         update: Record<string, unknown>;
       }) => {
         applicationUpserts += 1;
+        if (!application || update.events) eventWrites += 1;
         application = application ? { ...application, ...update } : { id: "app1", ...create };
         return application;
       },
@@ -128,20 +135,67 @@ export function setup() {
         data: Record<string, unknown>;
       }) => {
         coverLetterLinks.push(args);
+        if (failCoverLetterLink) throw new Error("Fixture document-link failure");
         return { count: 1 };
       },
     },
-    $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
+    $transaction: async (work: (tx: unknown) => Promise<unknown>) => {
+      transactionCalls += 1;
+      const before = structuredClone({ job, application });
+      const variantCount = variantLinks.length;
+      const letterCount = coverLetterLinks.length;
+      try {
+        return await work(db);
+      } catch (error) {
+        transactionRollbacks += 1;
+        job = before.job;
+        application = before.application;
+        variantLinks.length = variantCount;
+        coverLetterLinks.length = letterCount;
+        throw error;
+      }
+    },
   };
   const listings = { publishInBackground: () => undefined } as unknown as JobListingPublisher;
   const service = new CampaignJobService(db as unknown as PrismaClient, listings, makeBoards());
   return {
     service,
+    // Historical fixtures exercise persistence directly; no policy override or real database exists.
+    recordHistoricalResult: (input: CampaignJobResultInput) =>
+      persistJobResult(
+        db as unknown as PrismaClient,
+        "u1",
+        { ...job, campaign } as unknown as Parameters<typeof persistJobResult>[2],
+        input,
+      ),
     /** Starting a job.apply run: the move happens in a transaction wrapped in the duplicate guard. */
     startApplying: () =>
       guardApply(db as unknown as PrismaClient, "u1", () =>
         startApplying(db as unknown as Prisma.TransactionClient, "u1", "c1", "j1"),
       ),
+    checkDuplicate: () =>
+      guardApply(db as unknown as PrismaClient, "u1", () =>
+        assertNotDuplicateApply(
+          db as unknown as Parameters<typeof assertNotDuplicateApply>[0],
+          "u1",
+          job,
+        ),
+      ),
+    get application() {
+      return application;
+    },
+    get eventWrites() {
+      return eventWrites;
+    },
+    get transactionCalls() {
+      return transactionCalls;
+    },
+    get transactionRollbacks() {
+      return transactionRollbacks;
+    },
+    failDocumentLink() {
+      failCoverLetterLink = true;
+    },
     get job() {
       return job;
     },
