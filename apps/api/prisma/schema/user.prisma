@@ -79,6 +79,8 @@ model User {
   answerEntries AnswerEntry[]
   answerEntryEvents AnswerEntryEvent[]
   autoApply            AutoApplySettings?
+  dryRunSimulations DryRunSimulation[]
+  dryRunReservations DryRunReservation[]
   autoApplyPolicy      AutoApplyPolicy?
   autoApplyAuditEvents AutoApplyAuditEvent[]
   ingestionIntegrations IngestionIntegration[]

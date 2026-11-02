@@ -13,6 +13,7 @@ const other: string = crypto.randomUUID();
 let row: AutoApplyPolicy | null = null;
 let events: Record<string, unknown>[] = [];
 const db = {
+  $queryRaw: async () => [],
   autoApplyPolicy: {
     findUnique: async ({ where }: { where: { userId: string } }) =>
       row?.userId === where.userId ? row : null,
