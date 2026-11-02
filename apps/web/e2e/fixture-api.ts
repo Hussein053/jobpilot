@@ -34,6 +34,7 @@ const resume = () => ({
 });
 let currentResume = resume();
 let reviewWrites = 0;
+const resumeSubscribers = new Set<ReadableStreamDefaultController<Uint8Array>>();
 const runtime = {
   submissionMode: "DRY_RUN",
   liveSubmissionsEnabled: false,
@@ -51,6 +52,7 @@ const response = () => ({
 Bun.serve({
   hostname: "127.0.0.1",
   port: 4491,
+  idleTimeout: 0,
   async fetch(request) {
     const url = new URL(request.url);
     const headers = {
@@ -76,6 +78,23 @@ Bun.serve({
       settings = { ...settings, minimumSalaryUSD: 95_000 };
       version++;
       return json(response());
+    }
+    if (url.pathname === "/test/change-resume") {
+      currentResume.version++;
+      currentResume.approved = false;
+      currentResume.approvedAt = null;
+      currentResume.approvedVersion = null;
+      const event = new TextEncoder().encode(
+        `data: ${JSON.stringify({ type: "content.updated", resumeId, version: currentResume.version })}\n\n`,
+      );
+      for (const subscriber of resumeSubscribers) {
+        try {
+          subscriber.enqueue(event);
+        } catch {
+          resumeSubscribers.delete(subscriber);
+        }
+      }
+      return json({ version: currentResume.version });
     }
     if (url.pathname === "/test/state") return json({ ...response(), writes, reviewWrites });
     if (url.pathname === "/api/auth/me")
@@ -127,6 +146,22 @@ Bun.serve({
       });
     if (url.pathname === "/api/resumes") return json([currentResume]);
     if (url.pathname === `/api/resumes/${resumeId}`) return json(currentResume);
+    if (url.pathname === `/api/resumes/${resumeId}/events`) {
+      let subscriber: ReadableStreamDefaultController<Uint8Array> | undefined;
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            subscriber = controller;
+            resumeSubscribers.add(controller);
+            controller.enqueue(new TextEncoder().encode(": connected\n\n"));
+          },
+          cancel() {
+            if (subscriber) resumeSubscribers.delete(subscriber);
+          },
+        }),
+        { headers: { ...headers, "content-type": "text/event-stream" } },
+      );
+    }
     if (
       url.pathname === `/api/resumes/${resumeId}/variants` ||
       url.pathname === "/api/pilot/questions"

@@ -114,3 +114,46 @@ test("requires explicit confirmation of a reviewed resume and supports revocatio
   await expect(page.getByText("Review required", { exact: true })).toBeVisible();
   expect((await (await request.get(`${fixtureApi}/test/state`)).json()).reviewWrites).toBe(2);
 });
+
+test("does not approve a newer resume that arrived while confirmation was open", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/resumes/1578c15d-e419-4dd5-b23d-16ec6756e3da");
+  await page.getByRole("button", { name: "Approve saved version", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Approve saved version 1?", { exact: true })).toBeVisible();
+  await request.post(`${fixtureApi}/test/change-resume`);
+  await expect(page.getByText(/Approval applies only to saved version 2/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Approve saved version", exact: true }).click();
+  await expect(page.getByText("Reload resume", { exact: true })).toBeVisible();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).reviewWrites).toBe(0);
+});
+
+test("fails offline approval immediately and does not replay it after reconnecting", async ({
+  page,
+  context,
+  request,
+}) => {
+  await page.goto("/resumes/1578c15d-e419-4dd5-b23d-16ec6756e3da");
+  const approve = page.getByRole("button", { name: "Approve saved version", exact: true });
+  await expect(approve).toBeEnabled();
+  await context.setOffline(true);
+  await approve.click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Approve saved version", exact: true })
+    .click();
+  await expect(approve).toBeEnabled();
+  const replayed = page
+    .waitForRequest((event) => event.method() === "POST" && event.url().endsWith("/review"), {
+      timeout: 1000,
+    })
+    .then(
+      () => true,
+      () => false,
+    );
+  await context.setOffline(false);
+  expect(await replayed).toBe(false);
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).reviewWrites).toBe(0);
+});

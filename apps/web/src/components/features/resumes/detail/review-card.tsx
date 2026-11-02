@@ -15,14 +15,17 @@ interface ResumeReviewCardProps {
 }
 export function ResumeReviewCard({ resume }: ResumeReviewCardProps): ReactElement {
   const confirm = useConfirm();
+  const requestFor = (action: (typeof RESUME_REVIEW_ACTIONS)[number]) => ({
+    id: resume.id,
+    action,
+    expectedVersion: resume.version,
+    expectedReviewRevision: resume.reviewRevision,
+  });
   const review = useApiMutation(
-    (action: (typeof RESUME_REVIEW_ACTIONS)[number]) =>
-      api.resumes({ id: resume.id }).review.post({
-        action,
-        expectedVersion: resume.version,
-        expectedReviewRevision: resume.reviewRevision,
-      }),
+    ({ id, ...input }: ReturnType<typeof requestFor>) => api.resumes({ id }).review.post(input),
     {
+      networkMode: "always",
+      retry: false,
       invalidate: [queryKeys.resume.all, queryKeys.autoApply.all],
       successMessage: "Review recorded. Live submissions remain disabled.",
     },
@@ -57,28 +60,29 @@ export function ResumeReviewCard({ resume }: ResumeReviewCardProps): ReactElemen
               (!resume.content && !resume.sourceFilename)
             }
             onClick={async () => {
+              const request = requestFor("approve");
               if (
                 await confirm({
-                  title: `Approve saved version ${resume.version}?`,
+                  title: `Approve saved version ${request.expectedVersion}?`,
                   description:
                     "Confirm that you reviewed this saved resume and its source file. Unsaved edits are excluded. This does not authorize submission.",
                   confirmLabel: "Approve saved version",
                 })
               )
-                review.mutate("approve");
+                review.mutate(request);
             }}
           >
             Approve saved version
           </Button>
           <Button
             disabled={review.isPending || !resume.approved}
-            onClick={() => review.mutate("revoke")}
+            onClick={() => review.mutate(requestFor("revoke"))}
           >
             Revoke approval
           </Button>
           <Button
             disabled={review.isPending}
-            onClick={() => review.mutate(resume.active ? "deactivate" : "activate")}
+            onClick={() => review.mutate(requestFor(resume.active ? "deactivate" : "activate"))}
           >
             {resume.active ? "Make inactive" : "Make active"}
           </Button>

@@ -65,6 +65,8 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
       api["auto-apply"].settings.patch({ expectedVersion: saved.version, changes: settings }),
     {
       showErrorToast: false,
+      networkMode: "always",
+      retry: false,
       invalidate: [queryKeys.autoApply.all],
       onSuccess: (data) => {
         setSaved(data);
