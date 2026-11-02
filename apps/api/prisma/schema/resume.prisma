@@ -7,6 +7,7 @@ model Resume {
   approvedAt DateTime? @map("approved_at")
   approvedVersion Int? @map("approved_version")
   active Boolean @default(true)
+  reviewRevision Int @default(0) @map("review_revision")
 
   sourceFilename  String? @map("source_filename")
   sourceMimeType  String? @map("source_mime_type")
@@ -24,6 +25,30 @@ model Resume {
 
   @@index([userId])
   @@map("resumes")
+}
+
+enum ResumeReviewAction {
+  approve
+  revoke
+  activate
+  deactivate
+  @@map("resume_review_action")
+}
+
+model ResumeReviewEvent {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Keep the review trail after a resume is removed; account deletion still cascades.
+  resumeId String @map("resume_id")
+  action ResumeReviewAction
+  resumeVersion Int @map("resume_version")
+  reviewRevision Int @map("review_revision")
+  actorTokenId String @map("actor_token_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([resumeId, reviewRevision])
+  @@index([userId, createdAt])
+  @@map("resume_review_events")
 }
 
 model ResumeVariant {

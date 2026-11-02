@@ -49,6 +49,12 @@ export class ResumeService {
       .map((r) => ({
         id: r.id,
         label: r.label,
+        version: r.version,
+        reviewRevision: r.reviewRevision,
+        active: r.active,
+        approvedAt: r.approvedAt,
+        approvedVersion: r.approvedVersion,
+        approved: r.active && r.approvedAt !== null && r.approvedVersion === r.version,
         sourceFilename: r.sourceFilename,
         hasData: r.content !== null,
         variantCount: r._count.variants,
@@ -109,6 +115,12 @@ export class ResumeService {
       label: resume.label,
       content,
       version: resume.version,
+      reviewRevision: resume.reviewRevision,
+      active: resume.active,
+      approvedAt: resume.approvedAt,
+      approvedVersion: resume.approvedVersion,
+      approved:
+        resume.active && resume.approvedAt !== null && resume.approvedVersion === resume.version,
       sourceFilename: resume.sourceFilename,
       sourceMimeType: resume.sourceMimeType,
       sourceSizeBytes: resume.sourceSizeBytes,
@@ -133,6 +145,8 @@ export class ResumeService {
         ...(body.content && {
           content: toStoredContent(body.content),
           version: { increment: 1 },
+          approvedAt: null,
+          approvedVersion: null,
         }),
       },
     });
@@ -223,7 +237,7 @@ export class ResumeService {
     const source = await this.withSavedSource(file, async (source) => {
       await this.prisma.resume.update({
         where: { id },
-        data: { ...source, approvedAt: null, approvedVersion: null },
+        data: { ...source, approvedAt: null, approvedVersion: null, version: { increment: 1 } },
       });
       return source;
     });
@@ -244,6 +258,7 @@ export class ResumeService {
         sourceSizeBytes: null,
         approvedAt: null,
         approvedVersion: null,
+        version: { increment: 1 },
       },
     });
     if (resume.sourceFilename) {

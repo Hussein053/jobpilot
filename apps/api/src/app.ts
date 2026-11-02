@@ -42,6 +42,7 @@ import { expiryJob } from "@/modules/pilot/tasks/expiry.job";
 import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
 import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
+import { resumeReviewController } from "@/modules/resume/review/resume-review.controller";
 import { resumeVariantController } from "@/modules/resume/variants/variant.controller";
 import { scoringController } from "@/modules/scoring/scoring.controller";
 import { publicStatsController } from "@/modules/stats/stats.controller";
@@ -80,6 +81,7 @@ const app = new Elysia()
       .use(captchaController)
       .use(userController)
       .use(resumeController)
+      .use(resumeReviewController)
       .use(resumeVariantController)
       .use(publicResumeController)
       .use(publicJobListingController)

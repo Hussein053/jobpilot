@@ -33,6 +33,7 @@ import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
 import { PROMOTION_STATUSES } from "@jobpilot/contracts/pilot/promotion";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
 import { PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot/run";
+import { RESUME_REVIEW_ACTIONS } from "@jobpilot/contracts/resume-review";
 import { ROLES } from "@jobpilot/contracts/role";
 import {
   UPWORK_INBOX_KINDS,
@@ -55,6 +56,7 @@ type PrismaEnumName = Exclude<keyof typeof prismaEnums, (typeof API_ONLY)[number
 
 /** A Record over every Prisma enum, so a new one fails typecheck until it has a contracts copy. */
 const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
+  ResumeReviewAction: RESUME_REVIEW_ACTIONS,
   MissingSalaryPolicy: MISSING_SALARY_POLICIES,
   SearchFrequency: SEARCH_FREQUENCIES,
   ResumeSelection: RESUME_SELECTIONS,

@@ -65,6 +65,8 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
       api["auto-apply"].settings.patch({ expectedVersion: saved.version, changes: settings }),
     {
       showErrorToast: false,
+      networkMode: "always",
+      retry: false,
       invalidate: [queryKeys.autoApply.all],
       onSuccess: (data) => {
         setSaved(data);
@@ -147,7 +149,7 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
         <ResumePreferencesSection
           form={form}
           resumeReady={saved.resumeReady}
-          resumes={resumes.data ?? []}
+          resumes={resumes.data?.filter((resume) => resume.approved) ?? []}
         />
 
         <StickyFooter>

@@ -148,7 +148,7 @@ export const queryKeys = {
 
 /** Named invalidation sets for useApiMutation's `invalidate:` option. */
 export const invalidations = {
-  resume: [queryKeys.resume.all, queryKeys.user.all],
+  resume: [queryKeys.resume.all, queryKeys.user.all, queryKeys.autoApply.all],
   campaign: [queryKeys.campaigns.all, queryKeys.workspace.all],
   application: [queryKeys.applications.all, queryKeys.dashboard.all],
   // Approving a message can write an application status, so both trees go stale.
