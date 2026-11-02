@@ -3,8 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  pull_request: {}
 
 jobs:
   ci:
@@ -90,8 +89,20 @@ jobs:
         run: bun run test
         working-directory: packages/contracts
 
+      - name: Test web
+        run: bun run test
+        working-directory: apps/web
+
       - name: Typegen web
         run: bun run typegen
+        working-directory: apps/web
+
+      - name: Install fixture browser
+        run: bun x playwright install --with-deps chromium --only-shell
+        working-directory: apps/web
+
+      - name: Test settings and offline privacy in fixture browser
+        run: bun run test:e2e
         working-directory: apps/web
 
       - name: Cache Next.js build

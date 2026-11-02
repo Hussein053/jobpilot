@@ -1,6 +1,8 @@
 node_modules/
 .playwright-mcp/
 .playwright-mcp-test/
+apps/web/playwright-report/
+apps/web/test-results/
 
 # Skill scratch output. The rule lives in plugin/skills/_shared/setup.md "Scratch files".
 .temp/

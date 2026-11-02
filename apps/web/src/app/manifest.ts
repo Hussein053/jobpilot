@@ -3,11 +3,13 @@ import { surfaces } from "@/theme/palette";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "JobPilot - an AI agent that applies to jobs for you",
+    id: "/",
+    scope: "/",
+    name: "JobPilot AI",
     short_name: "JobPilot",
     description:
-      "An AI agent that finds jobs, tailors your resume, applies, and follows up on replies. It runs on your computer with your Claude or Codex subscription.",
-    start_url: "/",
+      "Job discovery, resume preparation, and application tracking. Development runs in enforced dry-run mode with live submissions disabled.",
+    start_url: "/settings/auto-apply",
     display: "standalone",
     background_color: surfaces.base,
     theme_color: surfaces.base,
