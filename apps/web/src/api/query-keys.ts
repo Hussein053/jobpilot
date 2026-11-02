@@ -1,4 +1,11 @@
 export const queryKeys = {
+  informationBank: {
+    all: ["information-bank"] as const,
+    list: (userId: string, query: unknown) =>
+      [...queryKeys.informationBank.all, userId, "list", query] as const,
+    history: (userId: string, id: string, page: number, limit: number) =>
+      [...queryKeys.informationBank.all, userId, "history", id, page, limit] as const,
+  },
   autoApply: {
     all: ["auto-apply"] as const,
     settings: () => [...queryKeys.autoApply.all, "settings"] as const,

@@ -10,11 +10,13 @@ authentication, and campaign routes retain their previous behavior.
 The owner identified `https://hlawal.app.n8n.cloud` as the existing n8n Cloud workspace, containing
 Telegram search, JSearch, Google Sheets tracking, Drive resume processing, AI tailoring, and
 scheduled searches whose configuration needs verification. These are owner-provided descriptions,
-not inspected workflows. No request was made to that workspace and no workflow was changed.
+descriptions at the time this adapter was implemented. The subsequently supplied 42-node export
+is analyzed in [n8n-workflow-integration-plan.md](n8n-workflow-integration-plan.md). No request
+was made to that workspace and no live workflow was changed.
 
 This is a **new canonical contract**, not a claim of compatibility with those workflows.
-Sanitized JSON exports are needed to verify node availability, output fields, job identities,
-salary units, pagination, scheduling/time zones, retry behavior, and an appropriate signing step.
+The supplied export establishes node structure and scheduling, but contains no pinned raw JSearch
+response. Provider response compatibility and secure Cloud signing still require verification.
 Do not include credential values, applicant information, resume contents, execution URLs with
 embedded tokens, or credential-bearing sample data in exports or discovery payloads.
 No API keys, passwords, private keys, or n8n credentials are requested or stored by this adapter.
