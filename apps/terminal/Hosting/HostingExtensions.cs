@@ -31,9 +31,15 @@ public static class HostingExtensions
         services.AddSingleton<TerminalSession>();
         services.AddSingleton<TerminalRelay>();
 
-        services.AddSingleton(sp => new PilotStore(
-            PilotStore.ResolvePath(sp.GetRequiredService<HostInstall>()),
-            sp.GetRequiredService<ILogger<PilotStore>>()));
+        services.AddSingleton(sp =>
+        {
+            var store = new PilotStore(
+                PilotStore.ResolvePath(sp.GetRequiredService<HostInstall>()),
+                sp.GetRequiredService<ILogger<PilotStore>>());
+            // An old persisted pairing must not resume an unrestricted agent after an upgrade.
+            store.SetRunning(false);
+            return store;
+        });
         services.AddSingleton<PilotApi>();
         services.AddSingleton<UsageMeter>();
         services.AddSingleton<PilotSession>();
@@ -84,6 +90,7 @@ public static class HostingExtensions
         }));
 
         app.Use(next => OriginPolicy.RejectOtherOrigins(app.Configuration, next));
+        app.Use(ExecutionBoundary.RejectUnconfinedExecution);
         app.UseCors(OriginPolicy.CorsPolicy);
         app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 

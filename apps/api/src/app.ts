@@ -20,6 +20,7 @@ import { credentialController } from "@/modules/credential/credential.controller
 import { emailAccountController } from "@/modules/email/account/account.controller";
 import { emailMessagesController } from "@/modules/email/messages.controller";
 import { emailOAuthController } from "@/modules/email/oauth.controller";
+import { executionController } from "@/modules/execution/execution.controller";
 import { healthController } from "@/modules/health/health.controller";
 import { adminBoardController } from "@/modules/job-board/admin-board.controller";
 import { jobBoardController } from "@/modules/job-board/job-board.controller";
@@ -67,6 +68,7 @@ const app = new Elysia()
       .use(securityController)
       .use(authProvidersController)
       .use(healthController)
+      .use(executionController)
       .use(jobBoardController)
       .use(credentialController)
       .use(contactController)

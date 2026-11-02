@@ -35,14 +35,14 @@ public sealed class HostStatus(TerminalSession session, HostInstall install, Url
 {
     public StatusResponse Get() => new()
     {
-        Status = install.PathsError is null ? "ok" : "degraded",
+        Status = "degraded",
         Session = session.IsRunning ? "running" : "stopped",
         Provider = session.ActiveProvider.Id,
         Providers = Provider.All,
         HostVersion = HostInstall.HostVersion,
-        Detail = install.PathsError,
+        Detail = install.PathsError ?? ExecutionBoundary.Message,
         CanRelaunch = scheme.IsRegistered,
-        CanUpdate = install.CanUpdate,
+        CanUpdate = false,
         Pilot = pilot.GetStatus(),
     };
 }

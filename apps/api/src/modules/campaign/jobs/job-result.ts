@@ -2,6 +2,7 @@ import type { CampaignJobResultInput, CampaignJobStatus } from "@jobpilot/contra
 import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
 import type { Application, PrismaClient } from "@/generated/prisma/client";
+import { assertApplicationExecutionAllowed } from "@/modules/execution/execution-policy";
 import { JOB_INCLUDE } from "./job-row";
 
 export function isTerminalJob(status: CampaignJobStatus): boolean {
@@ -72,6 +73,8 @@ export async function writeJobResult(
         : null;
     return { campaignJob: existing, application, source, changed: false };
   }
+
+  if (data.outcome === "applied") assertApplicationExecutionAllowed();
 
   // The contract requires `appliedAt` exactly when the outcome is applied.
   const appliedAt = data.outcome === "applied" && data.appliedAt ? new Date(data.appliedAt) : null;

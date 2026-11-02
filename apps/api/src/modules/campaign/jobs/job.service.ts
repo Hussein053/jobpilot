@@ -17,6 +17,7 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
+import { assertApplicationExecutionAllowed } from "@/modules/execution/execution-policy";
 import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { deriveCampaignSummary } from "../campaign.summary";
@@ -68,6 +69,9 @@ export class CampaignJobService {
   ) {}
 
   async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {
+    if (body.status === "applying") {
+      assertApplicationExecutionAllowed();
+    }
     await ensureCampaignOwned(this.prisma, userId, campaignId);
 
     const { board, ...fields } = body;
@@ -98,6 +102,7 @@ export class CampaignJobService {
 
   /** A field edit, moving the status too when the patch names a new one. Never idempotent. */
   async patchJob(userId: string, campaignId: string, key: string, patch: PatchCampaignJobInput) {
+    if (patch.status === "applying") assertApplicationExecutionAllowed();
     const existing = await this.findJob(userId, campaignId, key);
     if (isTerminalJob(existing.status)) {
       throw conflict("Terminal jobs cannot be edited; use the retry or rescan command.");
