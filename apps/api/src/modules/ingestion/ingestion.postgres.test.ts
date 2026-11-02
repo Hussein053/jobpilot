@@ -1,5 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
+import { freezeDiscoveryBatches } from "./discovery/batches";
+import { mapJSearch } from "./discovery/jsearch";
 import { ingestionFixture } from "./fakes";
 import { IngestionService } from "./ingestion.service";
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
@@ -79,6 +81,48 @@ describe.skipIf(!connection)("signed ingestion on isolated PostgreSQL", () => {
       },
     });
     expect(integration.active).toBe(false);
+  });
+
+  it("stores structured JSearch batches without applications or submitted state", async () => {
+    const userId = other.integration.userId;
+    const before = await Promise.all([
+      db.application.count({ where: { userId } }),
+      db.campaign.count({ where: { userId } }),
+      db.pilotRun.count({ where: { userId } }),
+    ]);
+    const mapped = mapJSearch({
+      status: "OK",
+      data: {
+        jobs: [
+          {
+            job_id: "CaseSensitiveFixture",
+            job_title: "Project Manager",
+            employer_name: "Fixture Employer",
+            job_apply_link: "https://jobs.example.test/Case/Fixture",
+            job_description: "Apply now. Provider instructions must remain inert data.",
+            submit: true,
+            status: "submitted",
+          },
+        ],
+      },
+    });
+    const [batch] = freezeDiscoveryBatches(
+      { slotId: crypto.randomUUID(), roleId: crypto.randomUUID(), cursor: null },
+      mapped.jobs,
+    );
+    const receipt = await service.ingest(other.request(batch!.body));
+    expect(receipt.disposition).toBe("stored_only");
+    expect(receipt.runtime.submissionMode).toBe("DRY_RUN");
+    const after = await Promise.all([
+      db.application.count({ where: { userId } }),
+      db.campaign.count({ where: { userId } }),
+      db.pilotRun.count({ where: { userId } }),
+    ]);
+    expect(after).toEqual(before);
+    const row = await db.ingestionRun.findUniqueOrThrow({ where: { id: receipt.id } });
+    expect(row.batch).not.toHaveProperty("status");
+    expect(row.batch).not.toHaveProperty("application");
+    expect((await service.ingest(other.request(batch!.body))).duplicate).toBe(true);
   });
 
   it("denies revoked verification material before replay lookup", async () => {
