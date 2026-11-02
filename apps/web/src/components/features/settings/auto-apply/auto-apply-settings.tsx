@@ -147,7 +147,7 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
         <ResumePreferencesSection
           form={form}
           resumeReady={saved.resumeReady}
-          resumes={resumes.data ?? []}
+          resumes={resumes.data?.filter((resume) => resume.approved) ?? []}
         />
 
         <StickyFooter>

@@ -75,6 +75,7 @@ model User {
   oauthAccounts      OAuthAccount[]
 
   resumes              Resume[]
+  resumeReviewEvents ResumeReviewEvent[]
   autoApply            AutoApplySettings?
   autoApplyPolicy      AutoApplyPolicy?
   autoApplyAuditEvents AutoApplyAuditEvent[]

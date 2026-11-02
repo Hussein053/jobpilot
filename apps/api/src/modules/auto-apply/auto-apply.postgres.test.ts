@@ -215,23 +215,25 @@ describe.skipIf(!connection)("auto-apply settings on isolated PostgreSQL", () =>
     expect(await db.resume.findUniqueOrThrow({ where: { id: resumeId } })).toMatchObject({
       approvedAt: null,
       approvedVersion: null,
+      version: 3,
     });
     await db.resume.update({
       where: { id: resumeId },
-      data: { approvedAt: new Date(), approvedVersion: 2 },
+      data: { approvedAt: new Date(), approvedVersion: 3 },
     });
     await resumes.deleteSource(owner, resumeId);
     expect(await db.resume.findUniqueOrThrow({ where: { id: resumeId } })).toMatchObject({
       approvedAt: null,
       approvedVersion: null,
       sourceFilename: null,
+      version: 4,
     });
   });
 
   it("preserves a fixed preference while reporting a deleted resume as unavailable", async () => {
     await db.resume.update({
       where: { id: resumeId },
-      data: { active: true, approvedAt: new Date(), approvedVersion: 2 },
+      data: { active: true, approvedAt: new Date(), approvedVersion: 4 },
     });
     const saved = await service.patch(owner, token, {
       expectedVersion: version,

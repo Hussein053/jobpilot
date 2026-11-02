@@ -98,3 +98,19 @@ test("uses a generic offline fallback without caching private pages or API data"
   await expect(page.getByText("You’re offline", { exact: true })).toBeVisible();
   await expect(page.getByText("Fixture Applicant", { exact: true })).toHaveCount(0);
 });
+
+test("requires explicit confirmation of a reviewed resume and supports revocation", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/resumes/1578c15d-e419-4dd5-b23d-16ec6756e3da");
+  await page.getByRole("button", { name: "Approve saved version", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).reviewWrites).toBe(0);
+  await dialog.getByRole("button", { name: "Approve saved version", exact: true }).click();
+  await expect(page.getByText("Current version approved", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Revoke approval", exact: true }).click();
+  await expect(page.getByText("Review required", { exact: true })).toBeVisible();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).reviewWrites).toBe(2);
+});
