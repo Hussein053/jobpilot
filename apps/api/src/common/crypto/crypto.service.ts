@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { inject, injectable } from "@needle-di/core";
 import { HOUR_MS } from "@/common/date/buckets";
 import { MemoryCache } from "@/common/memory-cache";
@@ -74,6 +75,12 @@ export class CryptoService {
 
   async decryptFor(userId: string, ctx: SecretContext, blob: string): Promise<string> {
     return decrypt(await this.getDek(userId), ctx, blob);
+  }
+
+  async fingerprintFor(userId: string, ctx: SecretContext, value: string): Promise<string> {
+    return createHmac("sha256", await this.getDek(userId))
+      .update(`${ctx}\0${value}`, "utf8")
+      .digest("hex");
   }
 
   /** Encrypt an optional secret column value, passing null/undefined/empty through unchanged. */

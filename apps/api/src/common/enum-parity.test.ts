@@ -20,6 +20,13 @@ import {
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
 import { CREDENTIAL_KINDS, SERVICE_PROVIDERS } from "@jobpilot/contracts/credential";
 import { CLASSIFICATIONS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
+import {
+  ANSWER_CATEGORIES,
+  ANSWER_EVENT_ACTIONS,
+  ANSWER_INTENTS,
+  ANSWER_SCOPES,
+  ANSWER_STATUSES,
+} from "@jobpilot/contracts/information-bank";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
   CONTACT_DISCOVERY_SOURCES,
@@ -57,6 +64,11 @@ type PrismaEnumName = Exclude<keyof typeof prismaEnums, (typeof API_ONLY)[number
 /** A Record over every Prisma enum, so a new one fails typecheck until it has a contracts copy. */
 const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   ResumeReviewAction: RESUME_REVIEW_ACTIONS,
+  AnswerIntent: ANSWER_INTENTS,
+  AnswerCategory: ANSWER_CATEGORIES,
+  AnswerScope: ANSWER_SCOPES,
+  AnswerStatus: ANSWER_STATUSES,
+  AnswerEventAction: ANSWER_EVENT_ACTIONS,
   MissingSalaryPolicy: MISSING_SALARY_POLICIES,
   SearchFrequency: SEARCH_FREQUENCIES,
   ResumeSelection: RESUME_SELECTIONS,

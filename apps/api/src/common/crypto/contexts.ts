@@ -13,6 +13,10 @@ export const SECRET_CONTEXTS = {
   gmailTokens: "gmail:tokens",
   emailOAuthClient: "email:oauthClient",
   apiTokenTerminal: "apiToken:terminal",
+  informationEntryKey: "information:entryKey",
+  informationEntry: "information:entry",
+  informationAudit: "information:audit",
+  informationLookup: "information:lookup",
 } as const;
 
 export type SecretContext = (typeof SECRET_CONTEXTS)[keyof typeof SECRET_CONTEXTS];
