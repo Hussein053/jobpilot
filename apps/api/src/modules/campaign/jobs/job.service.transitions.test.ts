@@ -22,64 +22,46 @@ describe("CampaignJobService queued rows", () => {
   });
 });
 
-// Both routes into `applying` have to refuse a duplicate: the agent's own `/applied/check` call is
-// advice it can skip, and by the browser step it is already too late.
-describe("CampaignJobService duplicate apply guard", () => {
-  const EXISTING = {
-    id: "app-1",
-    url: "https://example.test/jobs/1",
-    title: "Engineer",
-    company: "Acme",
-    appliedAt: new Date(APPLIED_AT),
-    status: "applied",
-  };
-
-  it("blocks the campaign PATCH into applying", async () => {
+describe("CampaignJobService dry-run execution boundary", () => {
+  it("blocks campaign PATCH and Pilot claim even for an otherwise approved job", async () => {
     const state = setup();
     state.setStatus("approved");
-    state.setApplication(EXISTING);
-
-    await expect(state.service.patchJob("u1", "c1", "j1", { status: "applying" })).rejects.toThrow(
-      /Already applied/,
-    );
-    expect(state.job.status).toBe("skipped");
+    await expect(
+      state.service.patchJob("u1", "c1", "j1", { status: "applying" }),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(state.startApplying()).rejects.toMatchObject({ status: 403 });
+    expect(state.job.status).toBe("approved");
   });
 
-  // The refusal rolls its own transaction back, so without a separate write the job stays
-  // `approved` and the next task list offers the same duplicate again.
-  it("records the refused job as skipped with the duplicate reason", async () => {
+  it("blocks an agent creating a job already marked applying", async () => {
+    const state = setup();
+    await expect(
+      state.service.addJob("u1", "c1", {
+        key: "j2",
+        title: "Engineer",
+        company: "Acme",
+        url: "https://example.test/jobs/2",
+        status: "applying",
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe("duplicate refusal remains independent of execution authorization", () => {
+  it("records a detected duplicate as skipped without starting an application", async () => {
     const state = setup();
     state.setStatus("approved");
-    state.setApplication(EXISTING);
-
-    await expect(state.startApplying()).rejects.toThrow(/recorded as skipped/);
-
+    state.setApplication({
+      id: "existing",
+      url: state.job.url,
+      title: state.job.title,
+      company: state.job.company,
+      appliedAt: new Date(APPLIED_AT),
+      status: "applied",
+    });
+    await expect(state.checkDuplicate()).rejects.toThrow("recorded as skipped");
     expect(state.job).toMatchObject({ status: "skipped", skipReason: "Already applied (url)" });
-  });
-
-  it("still lets a job through when nothing matches", async () => {
-    const state = setup();
-    state.setStatus("approved");
-
-    const patched = await state.service.patchJob("u1", "c1", "j1", { status: "applying" });
-
-    expect(patched).toMatchObject({ status: "applying" });
-  });
-
-  it("starts applying to an approved job and returns the row the write produced", async () => {
-    const state = setup();
-    state.setStatus("approved");
-
-    const started = await state.startApplying();
-
-    expect(started).toMatchObject({ key: "j1", status: "applying" });
-    expect(state.job.status).toBe("applying");
-  });
-
-  it("refuses to start the moment the row is no longer approved", async () => {
-    const state = setup();
-    state.setStatus("pending");
-
-    await expect(state.startApplying()).rejects.toThrow("Job is no longer approved.");
+    expect(state.applicationUpserts).toBe(0);
+    await expect(state.startApplying()).rejects.toMatchObject({ status: 403 });
   });
 });

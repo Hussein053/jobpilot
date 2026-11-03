@@ -8,6 +8,7 @@ import {
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
+import { assertApplicationExecutionAllowed } from "@/modules/execution/execution-policy";
 import { findFuzzyDuplicate } from "@/modules/scoring/applied-duplicates";
 import { publishStatusChange } from "./job-events";
 import { JOB_INCLUDE, type JobRow } from "./job-row";
@@ -169,6 +170,7 @@ export async function startApplying(
   campaignId: string,
   key: string,
 ): Promise<JobRow> {
+  assertApplicationExecutionAllowed();
   const where = { ...applyableJobWhere(userId), campaignId, key } satisfies Prisma.JobWhereInput;
 
   const target = await tx.job.findFirst({

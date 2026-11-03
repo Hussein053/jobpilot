@@ -17,13 +17,15 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
+import { assertApplicationExecutionAllowed } from "@/modules/execution/execution-policy";
 import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned, PROMOTABLE_SOURCES } from "../campaign.utils";
 import { assertNotDuplicateApply, guardApply } from "./apply-guard";
 import { publishJob, publishProgress, publishStatusChange } from "./job-events";
-import { isTerminalJob, writeJobResult } from "./job-result";
+import { writeJobResult } from "./job-result";
+import { isTerminalJob } from "./job-result.store";
 import { JOB_INCLUDE, type JobRow } from "./job-row";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
@@ -68,6 +70,9 @@ export class CampaignJobService {
   ) {}
 
   async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {
+    if (body.status === "applying") {
+      assertApplicationExecutionAllowed();
+    }
     await ensureCampaignOwned(this.prisma, userId, campaignId);
 
     const { board, ...fields } = body;
@@ -98,6 +103,7 @@ export class CampaignJobService {
 
   /** A field edit, moving the status too when the patch names a new one. Never idempotent. */
   async patchJob(userId: string, campaignId: string, key: string, patch: PatchCampaignJobInput) {
+    if (patch.status === "applying") assertApplicationExecutionAllowed();
     const existing = await this.findJob(userId, campaignId, key);
     if (isTerminalJob(existing.status)) {
       throw conflict("Terminal jobs cannot be edited; use the retry or rescan command.");

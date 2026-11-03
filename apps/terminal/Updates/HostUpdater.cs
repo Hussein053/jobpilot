@@ -33,6 +33,8 @@ public sealed class HostUpdater(HttpClient http, HostInstall install, ILogger<Ho
     /// <summary>Runs before the host binds. Returns true when a replacement was launched and this process should exit.</summary>
     public async Task<bool> UpdateAtStartupAsync()
     {
+        if (!ExecutionBoundary.UnrestrictedAgentsEnabled) return false;
+
         if (HostHandoff.IsUpdateRelaunch)
         {
             return false;
@@ -65,6 +67,8 @@ public sealed class HostUpdater(HttpClient http, HostInstall install, ILogger<Ho
     /// <summary>Updates a running host. On success the caller stops this process so the replacement can bind.</summary>
     public async Task<UpdateResult> UpdateNowAsync(CancellationToken ct)
     {
+        if (!ExecutionBoundary.UnrestrictedAgentsEnabled) return NotUpdating("dry-run");
+
         if (!install.CanUpdate)
         {
             return NotUpdating(UpdateResult.ReasonDevCheckout);

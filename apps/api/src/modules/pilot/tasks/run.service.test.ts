@@ -156,11 +156,19 @@ async function withEvent<T>(userId: string, act: () => Promise<T>): Promise<[T, 
 }
 
 describe("RunService.start", () => {
-  it("starts a task off the supplied snapshot and stores its payload", async () => {
+  it("blocks application tasks without creating a run", async () => {
     const { service, creates } = runDb({});
-    const run = await service.start(USER_ID, VERSION, applyTask.id);
-    expect(creates[0]).toMatchObject({ taskType: "job.apply", subjectId: "c1:j1" });
-    expect(run.payload).toMatchObject({ campaignId: "c1", jobKey: "j1" });
+    await expect(service.start(USER_ID, VERSION, applyTask.id)).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(creates).toHaveLength(0);
+  });
+
+  it("preserves non-submitting task claims", async () => {
+    const { service, creates } = runDb({});
+    const run = await service.start(USER_ID, VERSION, pausedTask.id);
+    expect(creates[0]).toMatchObject({ taskType: "campaign.reviewPaused", subjectId: "c9" });
+    expect(run.payload).toMatchObject({ campaignId: "c9" });
   });
 
   it("publishes run.started", async () => {

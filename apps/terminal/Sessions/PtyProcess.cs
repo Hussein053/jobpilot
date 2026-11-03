@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using JobPilot.Terminal.Hosting;
 using Pty.Net;
 
 namespace JobPilot.Terminal.Sessions;
@@ -123,8 +124,9 @@ public sealed class PtyProcess : IDisposable
         BestEffort(active.Dispose);
     }
 
+    // Native execution is deliberately absent until a confined worker is implemented.
     public static IPtyConnection SpawnWithPtyNet(PtyOptions options) =>
-        Task.Run(() => PtyProvider.SpawnAsync(options, CancellationToken.None)).GetAwaiter().GetResult();
+        ExecutionBoundary.RequireConfinedWorker<IPtyConnection>();
 
     public static PtyOptions BuildOptions(
         string command,

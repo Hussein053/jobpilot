@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Globalization;
+using JobPilot.Terminal.Hosting;
 
 namespace JobPilot.Terminal.Updates;
 
@@ -18,23 +18,9 @@ public static class HostHandoff
     /// </summary>
     public static bool IsUpdateRelaunch => Environment.GetEnvironmentVariable(AwaitPidVar) is not null;
 
-    /// <summary>Starts the installed binary with this process's arguments; it waits for this process to exit.</summary>
-    public static void Relaunch(string exePath)
-    {
-        var start = new ProcessStartInfo
-        {
-            FileName = exePath,
-            UseShellExecute = false,
-            WorkingDirectory = Environment.CurrentDirectory,
-        };
-        foreach (var arg in Environment.GetCommandLineArgs().Skip(1))
-        {
-            start.ArgumentList.Add(arg);
-        }
-
-        start.Environment[AwaitPidVar] = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
-        Process.Start(start);
-    }
+    /// <summary>Disabled in this build: an upstream replacement may lack the execution boundary.</summary>
+    public static void Relaunch(string exePath) =>
+        ExecutionBoundary.RequireConfinedWorker<object>();
 
     /// <summary>After a relaunch, waits briefly for the previous host to release the port.</summary>
     public static async Task WaitForPreviousHostAsync(ILogger logger)
