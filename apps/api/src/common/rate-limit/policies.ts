@@ -8,6 +8,7 @@ const HOUR = 60 * MINUTE;
  * it is idempotent, and throttling it could leave a user half-logged-out.
  */
 export const RATE_LIMITS = {
+  ingestion: { key: byIp, limit: 120, windowMs: HOUR, burst: 10 },
   /** Keyed by email and IP so one attacker can't lock out everyone behind the same office NAT. */
   loginPerAccount: {
     key: byEmailAndIp,
