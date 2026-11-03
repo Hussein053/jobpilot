@@ -6,6 +6,7 @@ import {
 import { EMPTY_RESUME_DATA } from "@jobpilot/contracts/resume";
 import { reviewResumeSchema } from "@jobpilot/contracts/resume-review";
 import { bankFixtureState, handleBankFixture, resetBankFixture } from "./bank-fixture";
+import { handlePolicyFixture, policyFixtureState, resetPolicyFixture } from "./policy-fixture";
 
 let settings = structuredClone(AUTO_APPLY_DEFAULTS);
 let version = 0;
@@ -72,6 +73,7 @@ Bun.serve({
       writes = 0;
       history = [];
       resetBankFixture();
+      resetPolicyFixture();
       currentResume = resume();
       reviewWrites = 0;
       return json({ ok: true });
@@ -99,7 +101,15 @@ Bun.serve({
       return json({ version: currentResume.version });
     }
     if (url.pathname === "/test/state")
-      return json({ ...response(), writes, reviewWrites, ...bankFixtureState() });
+      return json({
+        ...response(),
+        writes,
+        reviewWrites,
+        ...bankFixtureState(),
+        ...policyFixtureState(),
+      });
+    const policyResponse = await handlePolicyFixture(request, { settings, version }, json);
+    if (policyResponse) return policyResponse;
     const bankResponse = await handleBankFixture(request, json);
     if (bankResponse) return bankResponse;
     if (url.pathname === "/api/auth/me")

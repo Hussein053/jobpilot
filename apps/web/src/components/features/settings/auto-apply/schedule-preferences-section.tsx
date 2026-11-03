@@ -27,8 +27,8 @@ export const SchedulePreferencesSection = withForm({
             )}
           </form.AppField>
           <Alert severity="info">
-            Recorded daily count and remaining quota will appear in the policy preview. Dry-run
-            evaluations never count as submitted applications.
+            Daily counts below use the saved timezone and cap. Unsaved changes do not affect quota.
+            Dry-run evaluations never count as submitted applications.
           </Alert>
           <form.AppField name="searchFrequency">
             {(field) => (

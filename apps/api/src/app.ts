@@ -12,6 +12,7 @@ import { authController } from "@/modules/auth/auth.controller";
 import { authProvidersController } from "@/modules/auth/providers.controller";
 import { securityController } from "@/modules/auth/security.controller";
 import { autoApplyController } from "@/modules/auto-apply/auto-apply.controller";
+import { policyPreviewController } from "@/modules/auto-apply/preview/preview.controller";
 import { campaignController } from "@/modules/campaign/campaign.controller";
 import { campaignJobController } from "@/modules/campaign/jobs/job.controller";
 import { captchaController } from "@/modules/captcha/captcha.controller";
@@ -76,6 +77,7 @@ const app = new Elysia()
       .use(informationBankController)
       .use(executionController)
       .use(autoApplyController)
+      .use(policyPreviewController)
       .use(jobBoardController)
       .use(credentialController)
       .use(contactController)

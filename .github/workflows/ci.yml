@@ -107,11 +107,17 @@ jobs:
           DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/jobpilot_settings_test
 
       - name: Test database races, approval, encryption, and preservation
-        run: bun test src/modules/auto-apply/auto-apply.postgres.test.ts src/modules/ingestion/ingestion.postgres.test.ts src/modules/resume/review/resume-review.postgres.test.ts src/modules/information-bank/
+        run: bun test src/modules/auto-apply/auto-apply.postgres.test.ts src/modules/ingestion/ingestion.postgres.test.ts src/modules/resume/review/resume-review.postgres.test.ts src/modules/information-bank/ src/modules/auto-apply/preview/
         working-directory: apps/api
         env:
           JOBPILOT_TEST_DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/jobpilot_settings_test
           STORAGE_ROOT: /tmp/jobpilot-fixture-storage
+
+      - name: Check isolated fixture schema drift
+        run: bun x prisma migrate diff --from-config-datasource --to-schema prisma/schema --exit-code
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/jobpilot_settings_test
 
       - name: Test web
         run: bun run test
@@ -126,7 +132,7 @@ jobs:
         working-directory: apps/web
 
       - name: Test settings and offline privacy in fixture browser
-        run: bun run test:e2e
+        run: bun run test:e2e --max-failures=1
         working-directory: apps/web
 
       - name: Cache Next.js build

@@ -17,6 +17,7 @@ import { SectionCard, StickyFooter } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useConfirm } from "@/providers/confirm-provider";
 import { InstallHelp } from "./install-help";
+import { PolicyPreview } from "./policy-preview";
 import { ResumePreferencesSection } from "./resume-preferences-section";
 import { SchedulePreferencesSection } from "./schedule-preferences-section";
 import { SearchPreferencesSection } from "./search-preferences-section";
@@ -43,6 +44,7 @@ export function AutoApplySettings(): ReactElement {
         </Typography>
       </Alert>
       <SettingsEditor initial={query.data} />
+      <PolicyPreview />
       <SettingsHistory />
       <InstallHelp />
     </Stack>

@@ -1,0 +1,37 @@
+model DryRunSimulation {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId String @map("request_id")
+  requestDigest String @map("request_digest")
+  ingestionRunId String @map("ingestion_run_id")
+  settingsVersion Int @map("settings_version")
+  snapshot Json
+  createdAt DateTime @default(now()) @map("created_at")
+  reservations DryRunReservation[]
+  @@unique([userId, requestId])
+  @@index([userId, createdAt])
+  @@map("dry_run_simulations")
+}
+
+model DryRunReservation {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  simulationId String @map("simulation_id")
+  simulation DryRunSimulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  sourceId String @map("source_id")
+  url String
+  title String
+  company String
+  dayStartsAt DateTime @map("day_starts_at")
+  resumeId String @map("resume_id")
+  resumeVersion Int @map("resume_version")
+  resumeReviewRevision Int @map("resume_review_revision")
+  settingsVersion Int @map("settings_version")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([userId, sourceId, dayStartsAt])
+  @@unique([userId, url, dayStartsAt])
+  @@index([userId, createdAt])
+  @@map("dry_run_reservations")
+}
