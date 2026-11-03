@@ -71,6 +71,11 @@ function PolicyPreviewContent({ userId }: { userId: string }): ReactElement {
     },
   );
   const snapshot = preview.data;
+  const recordedCurrent =
+    simulation.isSuccess &&
+    simulation.variables?.ingestionRunId === runId &&
+    simulation.variables.expectedSettingsVersion === snapshot?.settingsVersion &&
+    simulation.variables.resumeId === (resumeId || undefined);
   return (
     <SectionCard
       title="Policy preview and daily quota"
@@ -126,7 +131,14 @@ function PolicyPreviewContent({ userId }: { userId: string }): ReactElement {
                 </MenuItem>
               ))}
             </TextField>
-            <PaginationFooter pagination={runs.data.pagination} onPageChange={page.setPage} />
+            <PaginationFooter
+              pagination={runs.data.pagination}
+              onPageChange={(next) => {
+                setRunId("");
+                simulation.reset();
+                page.setPage(next);
+              }}
+            />
             {!runs.data.items.length && (
               <Alert severity="info">
                 No discovered batches yet. Live n8n delivery remains disabled.
@@ -205,9 +217,10 @@ function PolicyPreviewContent({ userId }: { userId: string }): ReactElement {
             disabled={
               !runId ||
               !snapshot ||
+              preview.isError ||
               preview.isFetching ||
               simulation.isPending ||
-              simulation.isSuccess
+              recordedCurrent
             }
             onClick={async () => {
               if (!snapshot || !runId) return;
@@ -244,7 +257,7 @@ function PolicyPreviewContent({ userId }: { userId: string }): ReactElement {
         )}
         {simulation.data && (
           <Alert severity="success">
-            Simulation recorded.{" "}
+            Simulation recorded for settings version {simulation.data.settingsVersion}.{" "}
             {
               simulation.data.jobs.filter((job) => job.outcome.decision === "eligible_for_dry_run")
                 .length

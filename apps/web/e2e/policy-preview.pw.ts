@@ -49,11 +49,27 @@ test("shows saved quota separately and records review-only simulation after conf
     .click();
   await expect(
     page.getByText(
-      "Simulation recorded. 0 dry-run reservations; 1 need review. No applications submitted.",
+      "Simulation recorded for settings version 0. 0 dry-run reservations; 1 need review. No applications submitted.",
       { exact: true },
     ),
   ).toBeVisible();
   expect((await (await request.get(`${fixtureApi}/test/state`)).json()).simulationWrites).toBe(1);
+  await request.post(`${fixtureApi}/test/external-save`);
+  await page.getByRole("button", { name: "Refresh policy preview", exact: true }).click();
+  await expect(page.getByText(/Saved settings version 1/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record simulation", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Record simulation", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Record simulation", exact: true })
+    .click();
+  await expect(
+    page.getByText(
+      "Simulation recorded for settings version 1. 0 dry-run reservations; 1 need review. No applications submitted.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).simulationWrites).toBe(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
