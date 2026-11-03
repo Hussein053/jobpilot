@@ -23,22 +23,29 @@ import { afterAll, beforeAll, describe, expect, spyOn, test } from "bun:test";
 
 const f = discoveryFixture();
 const resolve = container.get.bind(container);
-const construction = spyOn(container, "get").mockImplementation((key) => {
-  if (key === DiscoveryRequestService) return f.gateway;
-  if (key === DiscoveryClaimService) return f.claims;
-  if (key === DiscoveryFreezeService) return f.freezes;
-  if (key === DiscoveryDeliveryService) return f.deliveries;
-  if (key === DiscoveryHistoryService) return f.history;
-  if (key === IngestionService) return f.ingestion;
-  return resolve(key);
-});
-const { discoveryController } = await import("./discovery.controller");
-const { ingestionController } = await import("../ingestion/ingestion.controller");
-construction.mockRestore();
-const app = new Elysia()
-  .use(errorMiddleware)
-  .guard({ as: "scoped", response: httpErrorResponses })
-  .group("/api", (api) => api.use(ingestionController).use(discoveryController));
+async function mountFixture() {
+  const construction = spyOn(container, "get").mockImplementation((key) => {
+    if (key === DiscoveryRequestService) return f.gateway;
+    if (key === DiscoveryClaimService) return f.claims;
+    if (key === DiscoveryFreezeService) return f.freezes;
+    if (key === DiscoveryDeliveryService) return f.deliveries;
+    if (key === DiscoveryHistoryService) return f.history;
+    if (key === IngestionService) return f.ingestion;
+    return resolve(key);
+  });
+  try {
+    const { discoveryController } = await import("./discovery.controller");
+    const { ingestionController } = await import("../ingestion/ingestion.controller");
+    const app = new Elysia()
+      .use(errorMiddleware)
+      .guard({ as: "scoped", response: httpErrorResponses })
+      .group("/api", (api) => api.use(ingestionController).use(discoveryController));
+    return (request: Request) => app.handle(request);
+  } finally {
+    construction.mockRestore();
+  }
+}
+let handle: (request: Request) => Promise<Response>;
 let auth: ReturnType<typeof spyOn<typeof container, "get">>;
 let providerCalls = 0;
 let historical: Application;
@@ -54,7 +61,7 @@ const capabilities: RelayCapabilities = {
     expect(init?.redirect).toBe("error");
     const headers = new Headers(init?.headers);
     headers.set("x-real-ip", crypto.randomUUID());
-    const response = await app.handle(new Request(url.toString(), { ...init, headers }));
+    const response = await handle(new Request(url.toString(), { ...init, headers }));
     if (url.pathname.endsWith("/ingest") && loseIngestionResponse && response.ok) {
       loseIngestionResponse = false;
       throw Error("Synthetic lost response; never log payloads");
@@ -104,7 +111,7 @@ const trigger = () =>
     body: JSON.stringify({ requestId: crypto.randomUUID(), trigger: "manual" }),
   });
 const ordinary = (path: string, token = f.owner) =>
-  app.handle(
+  handle(
     new Request(`https://jobpilot.example.test/api/integrations/n8n/search${path}`, {
       headers: { authorization: `Bearer ${token}` },
     }),
@@ -112,6 +119,7 @@ const ordinary = (path: string, token = f.owner) =>
 describe.skipIf(!f.enabled)("relay through mounted signed endpoints on PostgreSQL", () => {
   beforeAll(async () => {
     await f.setup({ roles: 3, cap: 12 });
+    handle = await mountFixture();
     const content = toInputJson({ ...EMPTY_RESUME_DATA, basics: { name: "Historical Fixture" } });
     const resume = await f.db.resume.create({
       data: { userId: f.owner, label: "Historical source", content },
@@ -184,7 +192,7 @@ describe.skipIf(!f.enabled)("relay through mounted signed endpoints on PostgreSQ
     expect(await f.db.ingestionRun.count({ where: { integrationId: f.integrationId } })).toBe(6);
   });
   test("machine operations reject user tokens, cross-purpose signatures and injected controls", async () => {
-    const unsigned = await app.handle(
+    const unsigned = await handle(
       new Request("https://jobpilot.example.test/api/integrations/n8n/search/claim", {
         method: "POST",
         headers: { authorization: `Bearer ${f.owner}`, "content-type": "application/json" },
@@ -197,7 +205,7 @@ describe.skipIf(!f.enabled)("relay through mounted signed endpoints on PostgreSQ
     const headers = original.headers;
     expect(
       (
-        await app.handle(
+        await handle(
           new Request("https://jobpilot.example.test/api/integrations/n8n/search/start", {
             method: "POST",
             headers,
@@ -211,13 +219,13 @@ describe.skipIf(!f.enabled)("relay through mounted signed endpoints on PostgreSQ
       { submissionMode: "LIVE" },
       { providerUrl: "https://evil.example.test" },
     ])
-      expect((await app.handle(f.request("claim", { ...input, ...extra }))).status).toBe(422);
+      expect((await handle(f.request("claim", { ...input, ...extra }))).status).toBe(422);
     const revoked = f.request("work", {});
     await f.db.ingestionIntegration.update({
       where: { id: f.integrationId },
       data: { active: false },
     });
-    expect((await app.handle(revoked)).status).toBe(401);
+    expect((await handle(revoked)).status).toBe(401);
     await f.db.ingestionIntegration.update({
       where: { id: f.integrationId },
       data: { active: true },
@@ -242,7 +250,7 @@ describe.skipIf(!f.enabled)("relay through mounted signed endpoints on PostgreSQ
     for (const path of ["/submit", "/activate", "/execute"])
       expect(
         (
-          await app.handle(
+          await handle(
             new Request(`https://jobpilot.example.test/api/integrations/n8n/search${path}`, {
               method: "POST",
               body: "{}",
