@@ -69,13 +69,15 @@ describe.skipIf(!f.enabled)("atomic dry-run reservations on isolated PostgreSQL"
       where: { userId: f.owner },
     });
     await expect(
-      f.db.dryRunReservation.delete({ where: { id: reservation.id } }),
+      Promise.resolve(f.db.dryRunReservation.delete({ where: { id: reservation.id } })),
     ).rejects.toThrow();
     await expect(
-      f.db.dryRunSimulation.update({
-        where: { id: reservation.simulationId },
-        data: { settingsVersion: 99 },
-      }),
+      Promise.resolve(
+        f.db.dryRunSimulation.update({
+          where: { id: reservation.simulationId },
+          data: { settingsVersion: 99 },
+        }),
+      ),
     ).rejects.toThrow();
     const history = await f.real.history(f.owner, { page: 1, limit: 20 });
     expect(history.pagination.total).toBe(5);
