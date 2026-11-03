@@ -83,6 +83,10 @@ model User {
   dryRunReservations DryRunReservation[]
   autoApplyPolicy      AutoApplyPolicy?
   autoApplyAuditEvents AutoApplyAuditEvent[]
+  discoveryPolicy DiscoveryPolicy?
+  discoveryRuns DiscoveryRun[]
+  discoveredJobs DiscoveredJob[]
+  discoveryEvents DiscoveryEvent[]
   ingestionIntegrations IngestionIntegration[]
   applications         Application[]
   campaigns            Campaign[]

@@ -107,7 +107,7 @@ jobs:
           DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/jobpilot_settings_test
 
       - name: Test database races, approval, encryption, and preservation
-        run: bun test src/modules/auto-apply/auto-apply.postgres.test.ts src/modules/ingestion/ingestion.postgres.test.ts src/modules/resume/review/resume-review.postgres.test.ts src/modules/information-bank/ src/modules/auto-apply/preview/
+        run: bun test src/modules/auto-apply/auto-apply.postgres.test.ts src/modules/ingestion/ingestion.postgres.test.ts src/modules/resume/review/resume-review.postgres.test.ts src/modules/information-bank/ src/modules/auto-apply/preview/ src/modules/discovery/
         working-directory: apps/api
         env:
           JOBPILOT_TEST_DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/jobpilot_settings_test

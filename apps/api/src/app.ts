@@ -19,6 +19,7 @@ import { captchaController } from "@/modules/captcha/captcha.controller";
 import { contactController } from "@/modules/contact/contact.controller";
 import { coverLetterController } from "@/modules/cover-letter/cover-letter.controller";
 import { credentialController } from "@/modules/credential/credential.controller";
+import { discoveryController } from "@/modules/discovery/discovery.controller";
 import { emailAccountController } from "@/modules/email/account/account.controller";
 import { emailMessagesController } from "@/modules/email/messages.controller";
 import { emailOAuthController } from "@/modules/email/oauth.controller";
@@ -74,6 +75,7 @@ const app = new Elysia()
       .use(authProvidersController)
       .use(healthController)
       .use(ingestionController)
+      .use(discoveryController)
       .use(informationBankController)
       .use(executionController)
       .use(autoApplyController)
