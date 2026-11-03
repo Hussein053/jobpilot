@@ -19,6 +19,14 @@ import {
 } from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
 import { CREDENTIAL_KINDS, SERVICE_PROVIDERS } from "@jobpilot/contracts/credential";
+import {
+  DISCOVERY_DELIVERY_STATES,
+  DISCOVERY_EVENTS,
+  DISCOVERY_FAILURES,
+  DISCOVERY_IDENTITY_KINDS,
+  DISCOVERY_TASK_STATES,
+  DISCOVERY_TRIGGERS,
+} from "@jobpilot/contracts/discovery";
 import { CLASSIFICATIONS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
 import {
   ANSWER_CATEGORIES,
@@ -63,6 +71,12 @@ type PrismaEnumName = Exclude<keyof typeof prismaEnums, (typeof API_ONLY)[number
 
 /** A Record over every Prisma enum, so a new one fails typecheck until it has a contracts copy. */
 const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
+  DiscoveryTrigger: DISCOVERY_TRIGGERS,
+  DiscoveryTaskState: DISCOVERY_TASK_STATES,
+  DiscoveryDeliveryState: DISCOVERY_DELIVERY_STATES,
+  DiscoveryIdentityKind: DISCOVERY_IDENTITY_KINDS,
+  DiscoveryFailure: DISCOVERY_FAILURES,
+  DiscoveryEventKind: DISCOVERY_EVENTS,
   ResumeReviewAction: RESUME_REVIEW_ACTIONS,
   AnswerIntent: ANSWER_INTENTS,
   AnswerCategory: ANSWER_CATEGORIES,

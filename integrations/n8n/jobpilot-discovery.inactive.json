@@ -1,0 +1,154 @@
+{
+  "name": "JobPilot Structured Discovery \u2014 INACTIVE TEMPLATE",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "UTC",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "availableInMCP": false
+  },
+  "nodes": [
+    {
+      "id": "manual-fixture",
+      "name": "Manual Fixture Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "tick-inactive",
+      "name": "Inactive Fifteen Minute Tick",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 200],
+      "disabled": true,
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/15 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "trigger-envelope",
+      "name": "Manual Trigger Identity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const { randomUUID } = require('crypto');\nreturn [{ json: { requestId: randomUUID(), trigger: 'manual' } }];"
+      }
+    },
+    {
+      "id": "scheduled-envelope",
+      "name": "Scheduled Trigger Identity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "parameters": {
+        "jsCode": "const { randomUUID } = require('crypto');\nreturn [{ json: { requestId: randomUUID(), trigger: 'scheduled' } }];"
+      }
+    },
+    {
+      "id": "relay-inactive",
+      "name": "Inactive Authenticated Relay",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "disabled": true,
+      "retryOnFail": false,
+      "parameters": {
+        "method": "POST",
+        "url": "https://relay.example.invalid/trigger",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 120000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "receipt-only",
+      "name": "Validate Safe Relay Receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 0],
+      "parameters": {
+        "jsCode": "const r = $json;\nif (r.submissionMode !== 'DRY_RUN' || !['complete', 'partial'].includes(r.status) || !Number.isInteger(r.storedBatches)) throw new Error('Relay receipt requires review');\nreturn [{ json: { status: r.status, runId: r.runId, storedBatches: r.storedBatches, issueCount: r.issueCount, submissionMode: 'DRY_RUN' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Manual Fixture Trigger": {
+      "main": [
+        [
+          {
+            "node": "Manual Trigger Identity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inactive Fifteen Minute Tick": {
+      "main": [
+        [
+          {
+            "node": "Scheduled Trigger Identity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inactive Authenticated Relay": {
+      "main": [
+        [
+          {
+            "node": "Validate Safe Relay Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger Identity": {
+      "main": [
+        [
+          {
+            "node": "Inactive Authenticated Relay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scheduled Trigger Identity": {
+      "main": [
+        [
+          {
+            "node": "Inactive Authenticated Relay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

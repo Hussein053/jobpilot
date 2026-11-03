@@ -27,15 +27,20 @@ export function verifyBatchSignature(
 ) {
   const digest = createHash("sha256").update(bytes).digest("hex");
   const message = `jobpilot-ingestion-v1\nPOST\n/api/integrations/n8n/ingest\n${headers.integrationId}\n${headers.timestamp}\n${digest}`;
+  verifySignedMessage(message, headers.signature, publicKeyPem);
+  return digest;
+}
+
+export function verifySignedMessage(message: string, signature: string, publicKeyPem: string) {
   let valid = false;
   try {
+    if (!publicKeyPem.trim().startsWith("-----BEGIN PUBLIC KEY-----")) throw new Error();
     const key = createPublicKey(publicKeyPem);
     valid =
       key.asymmetricKeyType === "ed25519" &&
-      verify(null, Buffer.from(message, "utf8"), key, Buffer.from(headers.signature, "base64"));
+      verify(null, Buffer.from(message, "utf8"), key, Buffer.from(signature, "base64"));
   } catch {
-    // Unverifiable provisioning material grants no access.
+    // Invalid key material never authenticates an integration.
   }
   if (!valid) throw unauthorized("Invalid ingestion signature");
-  return digest;
 }
