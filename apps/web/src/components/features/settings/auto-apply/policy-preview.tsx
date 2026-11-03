@@ -89,7 +89,8 @@ function PolicyPreviewContent({ userId }: { userId: string }): ReactElement {
         {snapshot && (
           <>
             <Typography variant="body2">
-              Saved settings version {snapshot.settingsVersion} · {snapshot.quota.date} ·{" "}
+              Saved settings version {snapshot.settingsVersion} ·{" "}
+              {new Date(snapshot.quota.date).toLocaleDateString(undefined, { timeZone: "UTC" })} ·{" "}
               {snapshot.quota.timeZone}
             </Typography>
             <Typography variant="body2">
@@ -101,9 +102,13 @@ function PolicyPreviewContent({ userId }: { userId: string }): ReactElement {
               capacity: {snapshot.quota.remainingSimulation}.
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Resets {new Date(snapshot.quota.resetsAt).toLocaleString()}. Recorded counts reflect
-              existing application history, not new website verification. Simulations never count as
-              submitted applications.
+              Resets{" "}
+              {new Date(snapshot.quota.resetsAt).toLocaleString(undefined, {
+                timeZone: snapshot.quota.timeZone,
+                timeZoneName: "short",
+              })}
+              . Recorded counts reflect existing application history, not new website verification.
+              Simulations never count as submitted applications.
             </Typography>
           </>
         )}

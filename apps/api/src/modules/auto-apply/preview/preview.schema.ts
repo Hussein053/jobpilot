@@ -4,7 +4,7 @@ import { storedDate } from "@jobpilot/contracts/utils/json";
 import { z } from "zod/v4";
 
 const quotaSchema = z.object({
-  date: z.string(),
+  date: storedDate,
   timeZone: z.string(),
   startsAt: storedDate,
   resetsAt: storedDate,

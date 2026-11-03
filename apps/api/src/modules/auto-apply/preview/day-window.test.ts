@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 describe("quota days in the user's time zone", () => {
   test("uses local rather than UTC date and excludes the next midnight", () => {
     const day = quotaDay(new Date("2026-11-02T01:00:00Z"), "America/New_York");
-    expect(day.date).toBe("2026-11-01");
+    expect(day.date.toISOString()).toBe("2026-11-01T00:00:00.000Z");
     expect(day.startsAt.toISOString()).toBe("2026-11-01T04:00:00.000Z");
     expect(day.resetsAt.toISOString()).toBe("2026-11-02T05:00:00.000Z");
   });

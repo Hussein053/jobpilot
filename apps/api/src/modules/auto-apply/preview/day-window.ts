@@ -30,7 +30,7 @@ export function quotaDay(now: Date, timeZone: string) {
     return new Date(low);
   };
   return {
-    date,
+    date: new Date(midnight),
     timeZone,
     startsAt: boundary(date, midnight),
     resetsAt: boundary(tomorrow, midnight + 86_400_000),

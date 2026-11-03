@@ -58,6 +58,7 @@ resume version and inspected job context before this evidence service is expande
 Recorded application counts use appliedAt in the user's current saved IANA timezone, with an
 inclusive start and exclusive next-day boundary. Reset calculation handles fractional offsets,
 23/25-hour daylight-saving days, and skipped midnights; it does not assume every day is 24 hours.
+The quota date is a UTC-midnight label; startsAt and resetsAt are the actual local-day instants.
 All historical application statuses still consume the day in which their application was recorded.
 
 Each simulation locks its owning User row before reading settings and counting capacity. Settings
