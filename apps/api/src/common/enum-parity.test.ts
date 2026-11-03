@@ -6,6 +6,12 @@ import {
 } from "@jobpilot/contracts/application";
 import { AUTH_TOKEN_KINDS, OAUTH_PROVIDERS } from "@jobpilot/contracts/auth";
 import {
+  DB_WORK_ARRANGEMENTS,
+  MISSING_SALARY_POLICIES,
+  RESUME_SELECTIONS,
+  SEARCH_FREQUENCIES,
+} from "@jobpilot/contracts/auto-apply";
+import {
   CAMPAIGN_ACTORS,
   CAMPAIGN_JOB_STATUSES,
   CAMPAIGN_SOURCES,
@@ -49,6 +55,10 @@ type PrismaEnumName = Exclude<keyof typeof prismaEnums, (typeof API_ONLY)[number
 
 /** A Record over every Prisma enum, so a new one fails typecheck until it has a contracts copy. */
 const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
+  MissingSalaryPolicy: MISSING_SALARY_POLICIES,
+  SearchFrequency: SEARCH_FREQUENCIES,
+  ResumeSelection: RESUME_SELECTIONS,
+  WorkArrangement: DB_WORK_ARRANGEMENTS,
   ApplicationEventKind: APPLICATION_EVENT_KINDS,
   ApplicationEventSource: APPLICATION_EVENT_SOURCES,
   ApplicationSource: APPLICATION_SOURCES,

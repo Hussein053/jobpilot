@@ -221,7 +221,10 @@ export class ResumeService {
   async uploadSource(userId: string, id: string, file: File) {
     const resume = await this.findOwned(userId, id);
     const source = await this.withSavedSource(file, async (source) => {
-      await this.prisma.resume.update({ where: { id }, data: source });
+      await this.prisma.resume.update({
+        where: { id },
+        data: { ...source, approvedAt: null, approvedVersion: null },
+      });
       return source;
     });
     // Only once the row points at the new file, so a failed write never leaves it dangling.
@@ -235,7 +238,13 @@ export class ResumeService {
     const resume = await this.findOwned(userId, id);
     await this.prisma.resume.update({
       where: { id },
-      data: { sourceFilename: null, sourceMimeType: null, sourceSizeBytes: null },
+      data: {
+        sourceFilename: null,
+        sourceMimeType: null,
+        sourceSizeBytes: null,
+        approvedAt: null,
+        approvedVersion: null,
+      },
     });
     if (resume.sourceFilename) {
       await deleteResumeFile(resume.sourceFilename);
