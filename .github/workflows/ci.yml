@@ -132,7 +132,7 @@ jobs:
         working-directory: apps/web
 
       - name: Test settings and offline privacy in fixture browser
-        run: bun run test:e2e
+        run: bun run test:e2e --max-failures=1
         working-directory: apps/web
 
       - name: Cache Next.js build

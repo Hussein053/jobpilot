@@ -83,10 +83,13 @@ public sealed class PilotLoopTests : IAsyncLifetime
         store.Save(Settings());
 
         await TestWait.Until(() => session.Actions.Contains("sleep:1800"));
+        await loop.StopAsync(CancellationToken.None);
         Assert.Equal(0, CyclesSent);
         Assert.DoesNotContain("start", session.Actions);
         Assert.Empty(session.Cycles);
-        Assert.Equal([1800], session.IdleCycles);
+        // The settings wake can end the first idle wait before the loop parks again.
+        Assert.NotEmpty(session.IdleCycles);
+        Assert.All(session.IdleCycles, seconds => Assert.Equal(1800, seconds));
     }
 
     [Fact]
