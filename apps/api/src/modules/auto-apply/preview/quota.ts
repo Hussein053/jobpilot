@@ -10,12 +10,16 @@ export async function readQuota(
 ) {
   const day = quotaDay(now, settings.timeZone);
   const where = { userId, appliedAt: { gte: day.startsAt, lt: day.resetsAt } };
-  const [recordedApplications, dryRunReservations] = await Promise.all([
+  const [recordedApplications, reservations, preparations] = await Promise.all([
     tx.application.count({ where }),
     tx.dryRunReservation.count({
       where: { userId, createdAt: { gte: day.startsAt, lt: day.resetsAt } },
     }),
+    tx.applicationPreparation.count({
+      where: { userId, status: "simulated", simulatedAt: { gte: day.startsAt, lt: day.resetsAt } },
+    }),
   ]);
+  const dryRunReservations = reservations + preparations;
   return {
     ...day,
     cap: settings.maxDailyApplications,

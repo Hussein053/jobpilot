@@ -79,6 +79,8 @@ model User {
   answerEntries AnswerEntry[]
   answerEntryEvents AnswerEntryEvent[]
   autoApply            AutoApplySettings?
+  preparations ApplicationPreparation[]
+  preparationEvents PreparationEvent[]
   dryRunSimulations DryRunSimulation[]
   dryRunReservations DryRunReservation[]
   autoApplyPolicy      AutoApplyPolicy?

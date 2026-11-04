@@ -1,0 +1,48 @@
+enum PreparationStatus {
+  review
+  ready
+  simulated
+  @@map("preparation_status")
+}
+enum PreparationEventKind {
+  prepared
+  reviewed
+  simulated
+  @@map("preparation_event_kind")
+}
+model ApplicationPreparation {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId String @map("request_id")
+  requestDigest String @map("request_digest")
+  ingestionRunId String @map("ingestion_run_id")
+  sourceId String @map("source_id")
+  url String
+  revision Int @default(1)
+  status PreparationStatus @default(review)
+  state Json
+  simulatedAt DateTime? @map("simulated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  events PreparationEvent[]
+  @@unique([userId, requestId])
+  @@unique([userId, sourceId])
+  @@unique([userId, url])
+  @@index([userId, createdAt])
+  @@map("application_preparations")
+}
+model PreparationEvent {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preparationId String @map("preparation_id")
+  preparation ApplicationPreparation @relation(fields: [preparationId], references: [id], onDelete: Cascade)
+  revision Int
+  kind PreparationEventKind
+  snapshot Json
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([preparationId, revision])
+  @@index([userId, createdAt])
+  @@map("preparation_events")
+}
