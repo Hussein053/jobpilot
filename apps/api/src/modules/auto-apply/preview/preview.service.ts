@@ -49,7 +49,7 @@ export class PolicyPreviewService {
     now: Date,
     manualId?: string,
   ) {
-    const [existing, pending, similar, similarPending, resume] = await Promise.all([
+    const [existing, pending, similar, similarPending, resume, preparation] = await Promise.all([
       tx.application.findFirst({ where: { userId, url: job.url }, select: { id: true } }),
       tx.dryRunReservation.findFirst({
         where: {
@@ -79,12 +79,20 @@ export class PolicyPreviewService {
         select: { id: true },
       }),
       selectResume(tx, userId, settings, job.title, manualId),
+      tx.applicationPreparation.findFirst({
+        where: {
+          userId,
+          status: "simulated",
+          OR: [{ sourceId: job.sourceId }, { url: job.url }],
+        },
+        select: { id: true },
+      }),
     ]);
     const outcome = evaluatePolicy(settings, this.evidence.facts(job, settings.roles), {
       approvedResume: !!resume,
       manualResumeSelected: settings.resumeSelection !== "manual" || !!manualId,
       duplicateApplication: !!existing,
-      duplicateInProgress: !!pending,
+      duplicateInProgress: !!pending || !!preparation,
       duplicateUncertain: !!similar || !!similarPending,
       remaining,
     });

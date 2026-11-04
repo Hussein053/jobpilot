@@ -13,7 +13,11 @@ export class AnswerResolutionService {
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly crypto: CryptoService = inject(CryptoService),
   ) {}
-  async resolve(userId: string, context: Omit<QuestionContext, "userId">) {
+  async resolve(
+    userId: string,
+    context: Omit<QuestionContext, "userId">,
+    db: Pick<PrismaClient, "answerEntry"> = this.prisma,
+  ) {
     if (!context.verified) return { decision: "review" as const, reason: "unverified_question" };
     const keyed = (value: string) =>
       this.crypto.fingerprintFor(userId, SECRET_CONTEXTS.informationLookup, value);
@@ -27,7 +31,7 @@ export class AnswerResolutionService {
       scopes.map((scope) => keyed(`scope\0${JSON.stringify(scope)}`)),
     );
     const now = new Date();
-    const rows = await this.prisma.answerEntry.findMany({
+    const rows = await db.answerEntry.findMany({
       where: {
         userId,
         intent: context.intent,

@@ -38,6 +38,14 @@ export class InformationBankService {
     if (!row) throw notFound("Answer not found");
     return row;
   }
+  private async lockReview(tx: Prisma.TransactionClient, userId: string, tokenId: string) {
+    const rows = await tx.$queryRaw<
+      { id: string }[]
+    >`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+    if (!rows.length) throw notFound("Account not found");
+    // Share the preparer's account lock so concurrent answer approvals cannot change its mapping.
+    await requireReviewSession(tx, userId, tokenId);
+  }
   private async indexes(userId: string, definition: BankEntryDefinition) {
     const keyed = (value: string) =>
       this.crypto.fingerprintFor(userId, SECRET_CONTEXTS.informationLookup, value);
@@ -149,6 +157,7 @@ export class InformationBankService {
     );
     const indexes = await this.indexes(userId, definition);
     const row = await this.prisma.$transaction(async (tx) => {
+      await this.lockReview(tx, userId, tokenId);
       const created = await tx.answerEntry.create({
         data: {
           id,
@@ -255,6 +264,7 @@ export class InformationBankService {
     }
     const indexes = await this.indexes(userId, nextDefinition);
     const row = await this.prisma.$transaction(async (tx) => {
+      await this.lockReview(tx, userId, tokenId);
       const changed = await tx.answerEntry.updateMany({
         where: { id, userId, version: expectedVersion },
         data: {
@@ -287,6 +297,7 @@ export class InformationBankService {
     await requireReviewSession(this.prisma, userId, tokenId);
     await this.findOwned(userId, id);
     await this.prisma.$transaction(async (tx) => {
+      await this.lockReview(tx, userId, tokenId);
       const changed = await tx.answerEntry.deleteMany({
         where: { id, userId, version: expectedVersion },
       });

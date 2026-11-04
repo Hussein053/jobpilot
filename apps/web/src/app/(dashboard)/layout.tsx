@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactElement } from "react";
-import { Box } from "@mui/material";
+import { Alert, Box } from "@mui/material";
 import { AppShell } from "@/components/layout";
 
 export default function DashboardLayout(props: PropsWithChildren): ReactElement {
@@ -14,6 +14,12 @@ export default function DashboardLayout(props: PropsWithChildren): ReactElement 
           py: { xs: 2, sm: 3 },
         }}
       >
+        {process.env.NEXT_PUBLIC_SYNTHETIC_PREVIEW === "1" && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Temporary DRY_RUN preview with synthetic data. Do not enter personal details or
+            production credentials. This preview expires automatically.
+          </Alert>
+        )}
         {children}
       </Box>
     </AppShell>
