@@ -8,20 +8,23 @@ if (process.env.JOBPILOT_LOCAL_DEMO !== "1")
 const demo = z
   .object({ email: z.email(), password: z.string(), preparationId: z.uuid() })
   .parse(JSON.parse(await readFile("/tmp/jobpilot-mvp/demo.json", "utf8")));
-const web = "http://127.0.0.1:4100";
-const api = "http://127.0.0.1:4101/api";
+const preview = process.env.JOBPILOT_PREVIEW_URL;
+if (preview && !/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(preview))
+  throw new Error("Only an HTTPS ephemeral preview origin is accepted.");
+const web = preview ?? "http://127.0.0.1:4100";
+const api = preview ? `${web}/api` : "http://127.0.0.1:4101/api";
 const check = expect.configure({ timeout: 30000 });
 const browser = await chromium.launch({ args: ["--no-sandbox"] });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
 context.setDefaultTimeout(60000);
 const errors: string[] = [];
 await context.route("**/*", (route) =>
-  [web, "http://127.0.0.1:4101"].includes(new URL(route.request().url()).origin)
+  [web, new URL(api).origin].includes(new URL(route.request().url()).origin)
     ? route.continue()
     : route.abort(),
 );
 await context.routeWebSocket("**/*", (socket) => {
-  if (new URL(socket.url()).origin === "ws://127.0.0.1:4100") socket.connectToServer();
+  if (!preview && new URL(socket.url()).origin === "ws://127.0.0.1:4100") socket.connectToServer();
   else socket.close();
 });
 const page = await context.newPage();
@@ -34,6 +37,13 @@ try {
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
   steps.push("ordinary password sign-in");
+  if (preview) {
+    const session = (await context.cookies(web)).find((cookie) => cookie.name === "session");
+    check(session?.secure).toBe(true);
+    check(session?.httpOnly).toBe(true);
+    check(session?.sameSite).toBe("Lax");
+    steps.push("HTTPS session cookie is Secure, HttpOnly and SameSite=Lax");
+  }
   await page.goto(`${web}/preparation`);
   await check(page.getByText(/DRY_RUN MVP — no applications will be submitted/)).toBeVisible();
   await page.getByRole("button", { name: "View preparation", exact: true }).first().click();
@@ -48,6 +58,7 @@ try {
     await page.screenshot({ path: "/tmp/jobpilot-mvp/review-desktop.png", fullPage: true });
     steps.push("required unanswered question blocks simulation");
     const created = await context.request.post(`${api}/information-bank/`, {
+      headers: { origin: web },
       data: {
         question: "Describe your experience leading cross-functional teams.",
         aliases: [],
@@ -65,6 +76,7 @@ try {
     if (!created.ok()) throw new Error(`Bank draft failed ${created.status()}`);
     const entry = z.object({ id: z.uuid(), version: z.number() }).parse(await created.json());
     const approved = await context.request.post(`${api}/information-bank/${entry.id}/approve`, {
+      headers: { origin: web },
       data: {
         expectedVersion: entry.version,
         reviewDueAt: new Date(Date.now() + 86400000).toISOString(),
