@@ -7,6 +7,11 @@ import { EMPTY_RESUME_DATA } from "@jobpilot/contracts/resume";
 import { reviewResumeSchema } from "@jobpilot/contracts/resume-review";
 import { bankFixtureState, handleBankFixture, resetBankFixture } from "./bank-fixture";
 import { handlePolicyFixture, policyFixtureState, resetPolicyFixture } from "./policy-fixture";
+import {
+  handlePreparationFixture,
+  preparationFixtureState,
+  resetPreparationFixture,
+} from "./preparation-fixture";
 
 let settings = structuredClone(AUTO_APPLY_DEFAULTS);
 let version = 0;
@@ -74,6 +79,7 @@ Bun.serve({
       history = [];
       resetBankFixture();
       resetPolicyFixture();
+      resetPreparationFixture();
       currentResume = resume();
       reviewWrites = 0;
       return json({ ok: true });
@@ -107,7 +113,10 @@ Bun.serve({
         reviewWrites,
         ...bankFixtureState(),
         ...policyFixtureState(),
+        ...preparationFixtureState(),
       });
+    const preparationResponse = await handlePreparationFixture(request, json);
+    if (preparationResponse) return preparationResponse;
     const policyResponse = await handlePolicyFixture(request, { settings, version }, json);
     if (policyResponse) return policyResponse;
     const bankResponse = await handleBankFixture(request, json);

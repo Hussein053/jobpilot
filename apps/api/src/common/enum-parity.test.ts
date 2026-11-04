@@ -48,6 +48,7 @@ import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
 import { PROMOTION_STATUSES } from "@jobpilot/contracts/pilot/promotion";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
 import { PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot/run";
+import { PREPARATION_EVENTS, PREPARATION_STATUSES } from "@jobpilot/contracts/preparation";
 import { RESUME_REVIEW_ACTIONS } from "@jobpilot/contracts/resume-review";
 import { ROLES } from "@jobpilot/contracts/role";
 import {
@@ -80,6 +81,8 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   ResumeReviewAction: RESUME_REVIEW_ACTIONS,
   AnswerIntent: ANSWER_INTENTS,
   AnswerCategory: ANSWER_CATEGORIES,
+  PreparationStatus: PREPARATION_STATUSES,
+  PreparationEventKind: PREPARATION_EVENTS,
   AnswerScope: ANSWER_SCOPES,
   AnswerStatus: ANSWER_STATUSES,
   AnswerEventAction: ANSWER_EVENT_ACTIONS,
