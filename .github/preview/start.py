@@ -146,7 +146,7 @@ try:
     access.unlink()
     metadata = {'url': origin, 'expiresAt': expires, 'mode': 'DRY_RUN', 'syntheticOnly': True, 'release': release['tag_name'], 'liveApplicationsEnabled': False, 'normalSecureSignInVerified': True, 'commit': os.environ['PREVIEW_HEAD_SHA']}
     (ARTIFACT / 'preview.json').write_text(json.dumps(metadata, indent=2))
-    for name in ['browser-report.json', 'simulated-desktop.png', 'simulated-phone.png']:
+    for name in ['browser-report.json', 'simulated-desktop.png', 'simulated-phone.png', 'answer-history-phone.png']:
         (ARTIFACT / name).write_bytes((Path('/tmp/jobpilot-mvp') / name).read_bytes())
     print(json.dumps(metadata))
 except BaseException:

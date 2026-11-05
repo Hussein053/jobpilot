@@ -9,12 +9,19 @@ const id = "20e40b66-f3e7-47ca-9969-d66e90258846";
 let preparation: Preparation | null = null;
 let answersApproved = false;
 let simulated = 0;
+let answerHistoryReads = 0;
+let referenceOnlyHistory = false;
 export function resetPreparationFixture() {
   preparation = null;
   answersApproved = false;
   simulated = 0;
+  answerHistoryReads = 0;
+  referenceOnlyHistory = false;
 }
-export const preparationFixtureState = () => ({ preparationSimulations: simulated });
+export const preparationFixtureState = () => ({
+  preparationSimulations: simulated,
+  answerHistoryReads,
+});
 
 function fixture(): Preparation {
   const at = new Date();
@@ -91,6 +98,10 @@ export async function handlePreparationFixture(
   json: (value: unknown, status?: number) => Response,
 ): Promise<Response | null> {
   const path = new URL(request.url).pathname;
+  if (path === "/test/reference-only-preparation-history") {
+    referenceOnlyHistory = true;
+    return json({ ok: true });
+  }
   if (path === "/test/approve-preparation-answer") {
     answersApproved = true;
     return json({ ok: true });
@@ -113,6 +124,35 @@ export async function handlePreparationFixture(
   }
   if (!path.startsWith(`/api/preparations/${id}`)) return null;
   if (!preparation) return json({ message: "Preparation not found" }, 404);
+  if (path.endsWith("/answer-history") && request.method === "GET") {
+    answerHistoryReads++;
+    const at = new Date();
+    return json({
+      historicalOnly: true,
+      canReuse: false,
+      canSubmit: false,
+      items: referenceOnlyHistory
+        ? []
+        : [
+            {
+              id: "37a61a5d-1e51-4883-b04e-87bb755b7f25",
+              questionId: "experience",
+              question: "Describe your experience leading cross-functional teams.",
+              intent: "other",
+              sensitive: false,
+              entryId: "95e671db-212e-414c-8bcc-622d41e503a9",
+              entryVersion: 2,
+              approvedAt: at,
+              reviewDueAt: at,
+              capturedAt: at,
+              scope: "job",
+              scopeKey: "https://jobs.fixture.invalid/program-manager",
+              source: { kind: "user_entered", referenceId: null, referenceVersion: null },
+              answer: { kind: "text", value: "Archived private preparation answer" },
+            },
+          ],
+    });
+  }
   if (request.method === "GET") return json(preparation);
   const value = await request.json();
   if (path.endsWith("/review")) {

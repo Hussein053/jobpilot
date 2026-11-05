@@ -124,6 +124,22 @@ try {
   for (const control of ["Submit", "Enter", "Continue", "Next", "Apply", "Save"])
     check(state.simulation.evidence).toContain(`blocked_control:${control}`);
   steps.push("persisted audit and all six blocked controls verified from real backend");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Review historical answers", exact: true }).click();
+  await page.getByRole("button", { name: "Reveal historical answers", exact: true }).click();
+  const historyDialog = page.getByRole("dialog");
+  await check(historyDialog).toContainText("do not authorize answer reuse");
+  await check(historyDialog.getByText(demo.email, { exact: true })).toBeVisible();
+  await check(historyDialog).toContainText("SYNTHETIC FIXTURE ONLY");
+  await page.screenshot({ path: "/tmp/jobpilot-mvp/answer-history-phone.png", fullPage: true });
+  await historyDialog.getByRole("button", { name: "Close", exact: true }).click();
+  await check(page.getByRole("dialog")).toHaveCount(0);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  steps.push(
+    "explicit private answer-history reveal verified; archived values unmount when closed",
+  );
+
   await page.setViewportSize({ width: 390, height: 844 });
   await check
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))

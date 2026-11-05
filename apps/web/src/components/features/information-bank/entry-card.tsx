@@ -92,7 +92,7 @@ export function EntryCard({ entry, onEdit, onHistory }: EntryCardProps): ReactEl
                 await confirm({
                   title: "Delete this answer?",
                   description:
-                    "This removes the answer and makes its saved answer history unreadable in the app. Audit dates remain. Downloaded exports and backups have separate retention.",
+                    "This deletes the live answer and its Information Bank history key, making that answer history unreadable. Encrypted copies already used in preparation history remain until account deletion. Revoking an answer blocks future use. Audit dates remain. Downloaded exports and backups have separate retention.",
                   confirmLabel: "Delete",
                   destructive: true,
                 })

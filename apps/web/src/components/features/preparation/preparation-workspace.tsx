@@ -134,6 +134,8 @@ function PreparationContent({ userId }: { userId: string }): ReactElement {
       )}
       {snapshot && (
         <PreparationDetail
+          key={snapshot.id}
+          userId={userId}
           preparation={snapshot}
           pending={pending}
           onRefresh={() => reviewRequest(false)}

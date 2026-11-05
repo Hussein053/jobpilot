@@ -75,6 +75,32 @@ test("reviews unknown answers and exceptions before recording a clearly simulate
   ).toBe(1);
   await expect(page.getByText(/Optional · boolean · review/)).toBeVisible();
   await expect(page.getByText(/Approved Information Bank entry.*version 1/)).toBeVisible();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).answerHistoryReads).toBe(0);
+  await expect(page.getByText("Archived private preparation answer", { exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("button", { name: "Review historical answers", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Reveal private historical answers?");
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).answerHistoryReads).toBe(0);
+  await page.getByRole("button", { name: "Reveal historical answers", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Archived private preparation answer");
+  await expect(page.getByRole("dialog")).toContainText("do not authorize answer reuse");
+  await expect(page.getByRole("dialog")).toContainText("version 2");
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.getByText("Archived private preparation answer", { exact: true })).toHaveCount(
+    0,
+  );
+  await request.post(`${fixtureApi}/test/reference-only-preparation-history`);
+  await page.getByRole("button", { name: "Review historical answers", exact: true }).click();
+  await page.getByRole("button", { name: "Reveal historical answers", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Reference-only history; no answer values archived.",
+  );
+  await expect(page.getByText("Archived private preparation answer", { exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).answerHistoryReads).toBe(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
