@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import urllib.request
+import urllib.error
 from urllib.parse import urlparse
 
 
@@ -40,16 +41,17 @@ def publish():
     headers = {'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'JobPilot-preview'}
     with urllib.request.urlopen(urllib.request.Request(endpoint, headers=headers), timeout=30) as response:
         pr = json.load(response)
-        etag = response.headers.get('ETag')
     if pr['head']['sha'] != expected or pr['head']['repo']['full_name'] != repo or pr['state'] != 'open':
         raise ValueError('Pull request moved or is not an owner-repository preview')
     headers['Content-Type'] = 'application/json'
-    if etag and not etag.startswith('W/'):
-        headers['If-Match'] = etag
     payload = json.dumps({'body': preview_body(pr.get('body'), metadata)}).encode()
-    with urllib.request.urlopen(urllib.request.Request(endpoint, data=payload, headers=headers, method='PATCH'), timeout=30) as response:
-        if response.status != 200:
-            raise RuntimeError('Preview metadata was not published')
+    try:
+        with urllib.request.urlopen(urllib.request.Request(endpoint, data=payload, headers=headers, method='PATCH'), timeout=30) as response:
+            if response.status != 200:
+                raise RuntimeError('Preview metadata was not published')
+    except urllib.error.HTTPError as error:
+        detail = json.loads(error.read()).get('message', 'Request rejected')
+        raise RuntimeError(f'GitHub metadata update failed: HTTP {error.code}: {detail}') from None
     print('Published verified URL and encrypted fixture access; no plaintext credentials.')
 
 

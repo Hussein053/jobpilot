@@ -1,6 +1,9 @@
 import importlib.util
 from datetime import datetime, timedelta, timezone
 import json
+import os
+import tempfile
+from unittest import mock
 from pathlib import Path
 import unittest
 
@@ -28,6 +31,37 @@ class PreviewPublicationTests(unittest.TestCase):
         updated = module.preview_body(body, metadata)
         self.assertEqual(updated.count('<!-- jobpilot-preview '), 1)
         self.assertEqual(json.loads(updated.split('<!-- jobpilot-preview ')[1].split(' -->')[0]), metadata)
+
+
+    def test_publication_uses_supported_patch_and_does_not_copy_credentials(self):
+        source = self.source()
+        calls = []
+        class Response:
+            status = 200
+            headers = {'ETag': '"etag-fixture"'}
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def read(self): return json.dumps({'head': {'sha': source['commit'], 'repo': {'full_name': 'Hussein053/jobpilot'}}, 'state': 'open', 'body': 'Original reviewer description'}).encode()
+        def transport(request, timeout):
+            calls.append(request)
+            self.assertIsNone(request.get_header('If-match'))
+            return Response()
+        previous = os.getcwd()
+        with tempfile.TemporaryDirectory() as folder:
+            try:
+                os.chdir(folder)
+                Path('preview-artifact').mkdir()
+                Path('preview-artifact/preview.json').write_text(json.dumps(source))
+                Path('preview-artifact/access.enc').write_bytes(bytes(384))
+                env = {'GITHUB_REPOSITORY': 'Hussein053/jobpilot', 'PREVIEW_PR_NUMBER': '11', 'PREVIEW_HEAD_SHA': source['commit'], 'GITHUB_TOKEN': 'fixture-token-never-published'}
+                with mock.patch.dict(os.environ, env), mock.patch.object(module.urllib.request, 'urlopen', transport):
+                    module.publish()
+            finally: os.chdir(previous)
+        self.assertEqual([request.get_method() for request in calls], ['GET', 'PATCH'])
+        body = json.loads(calls[-1].data)['body']
+        self.assertIn('Original reviewer description', body)
+        self.assertNotIn('fixture-token-never-published', body)
+        self.assertNotIn('"password"', body)
 
 
 if __name__ == '__main__':
