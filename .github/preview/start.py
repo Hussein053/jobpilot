@@ -130,7 +130,7 @@ try:
     ENV.update({'HOSTNAME': '127.0.0.1', 'PORT': '4100'})
     start(['node', str(standalone / 'server.js')], '.', 'web-production-private.log')
     wait_http('http://127.0.0.1:4100/login')
-    expires_at = time.time() + 90 * 60
+    expires_at = time.time() + 4 * 60 * 60
     from datetime import datetime, timezone
     expires = datetime.fromtimestamp(expires_at, timezone.utc).isoformat().replace('+00:00', 'Z')
     STATE.write_text(json.dumps({'origin': origin, 'expiresAt': expires, 'mode': 'DRY_RUN', 'liveSubmissionsEnabled': False, 'unrestrictedAgentsEnabled': False}))
@@ -140,7 +140,7 @@ try:
     run(['bun', 'e2e/live-demo.ts'], folder='apps/web', log='browser-private.log', env=verify_env)
 
     access = PRIVATE / 'access.json'
-    access.write_text(json.dumps({'email': demo['email'], 'password': demo['password']}))
+    access.write_text(json.dumps({'email': demo['email'], 'password': demo['password'], 'url': origin, 'expiresAt': expires, 'commit': os.environ['PREVIEW_HEAD_SHA']}))
     access.chmod(0o600)
     run(['openssl', 'pkeyutl', '-encrypt', '-pubin', '-inkey', str(ROOT / '.github/preview/access-public.pem'), '-pkeyopt', 'rsa_padding_mode:oaep', '-pkeyopt', 'rsa_oaep_md:sha256', '-in', str(access), '-out', str(ARTIFACT / 'access.enc')], folder='.', log='encrypt-private.log')
     access.unlink()

@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: synthetic-preview-${{ github.event.pull_request.number }}
@@ -15,7 +16,7 @@ jobs:
   preview:
     if: (github.head_ref == 'feat/dry-run-mvp-reviewed' || github.head_ref == 'feat/preparation-answer-history') && github.event.pull_request.head.repo.full_name == github.repository && github.event.repository.private == false
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 300
     services:
       postgres:
         image: postgres:17
@@ -29,6 +30,7 @@ jobs:
           --health-cmd "pg_isready -U jobpilot_fixture -d jobpilot_mvp_local"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
+      PREVIEW_PR_NUMBER: ${{ github.event.pull_request.number }}
       PREVIEW_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v7
@@ -40,6 +42,8 @@ jobs:
       - name: Install verification browser
         run: bunx playwright install chromium --with-deps --only-shell
         working-directory: apps/web
+      - name: Test preview metadata publication
+        run: python3 -m unittest discover -s .github/preview -p "test_*.py"
       - name: Start and verify expiring synthetic HTTPS preview
         run: python3 .github/preview/start.py
       - name: Publish URL and encrypted fixture access
@@ -50,6 +54,10 @@ jobs:
           retention-days: 1
           overwrite: true
           if-no-files-found: error
+      - name: Publish verified URL and encrypted access metadata
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 .github/preview/publish.py
       - name: Publish sanitized failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
