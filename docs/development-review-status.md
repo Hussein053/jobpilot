@@ -37,6 +37,12 @@ complete tree can be tested and reviewed in one place. It does not close, merge 
 stacked PRs automatically. Only this additional explicit owner branch is allowed to request a
 synthetic preview; public-repository and same-owner checks remain required.
 
+The consolidated draft is PR #12. GitHub's available run-list API currently returns no runs
+for its published source head, just as for the latest PR #11 updates. No cause is established
+by that empty result. Exact-head hosted database, browser, terminal and build verification
+therefore remains blocked; the prior preview expired and is not a working replacement URL.
+Local checks passed with 773 API tests, 65 contracts, six PWA tests and three publisher tests.
+
 ## Remaining implementation limits
 
 - The in-process fixture worker is demonstrable, but is not an employer browser. Unrestricted

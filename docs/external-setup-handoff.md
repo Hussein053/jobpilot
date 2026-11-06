@@ -26,6 +26,7 @@ email and provider searches may add usage charges and must be included in the fi
 
 | Connection or permission | Needed for | Owner action and credential custody | When required |
 | --- | --- | --- | --- |
+| GitHub Actions execution and environment verification access | Fresh PostgreSQL/browser/terminal/build evidence on the integrated head | Check repository Actions policy, runner availability and any workflow approval requirement. Connector reads currently return no runs for the published follow-up or newly opened consolidated PR. The available tools do not establish why. Local browser restoration is separately blocked by sandbox `EPERM` to the inherited proxy; the prior launcher approval must not be treated as new blanket network permission | Verification blocker; do not merge, release or claim the new HTTPS preview verified until exact-head checks run. No failed check may be bypassed |
 | Hosting, persistent PostgreSQL and document volume | Stable HTTPS access and durable private data | Select an option above and approve its exact cost/access scope. Use platform secret bindings for `DATABASE_URL`; database not publicly exposed | Before persistent installation; paid provisioning and production release require separate approval |
 | Encryption and backups | Resume files, Information Bank and historical used-answer copies | Generate `SECRET_MASTER_KEY` inside the approved secret manager; keep encrypted, independently recoverable database/file backups and a separately protected key backup. Agree region, operators and retention | Before requesting any actual resume or sensitive answer; demonstrate restore and owner isolation first |
 | HTTPS hostname and origin configuration | Secure sessions, PWA and API access | Approve DNS access to one hostname; configure `APP_URL`, `CORS_ORIGINS`, build-time `NEXT_PUBLIC_API_URL` and private `INTERNAL_API_URL` consistently. Use HTTPS, exact origins, Secure cookies and no private caching | Persistent release preparation; DNS changes and deployment remain approval-dependent |
@@ -85,3 +86,13 @@ in the old system and cannot become verified JobPilot submission evidence.
 Real employer-form inspection and a confined external browser worker remain unimplemented.
 Current preparation intentionally accepts only synthetic `.invalid` jobs. No external connection
 or deployment approval can enable unrestricted browser execution or real application submission.
+
+## Current verification boundary
+
+The consolidated draft PR targets main without merging it. Local lint, dead-code checks,
+API/web types, 773 API tests, 65 contracts, six service-worker tests and three preview publisher
+tests passed. PostgreSQL/browser/.NET/build checks for this follow-up have no new hosted run;
+older green checks are not attributed to this source. The previous four-hour preview expired.
+No replacement HTTPS URL may be advertised as verified before its actual browser/API/database
+demonstration succeeds. Production console email rejects before rendering, provider mail
+errors are redacted, and reset acknowledgements do not expose delivery failure for an account.
