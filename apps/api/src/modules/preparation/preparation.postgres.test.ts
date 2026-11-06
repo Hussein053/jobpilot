@@ -4,6 +4,7 @@ import { CryptoService } from "@/common/crypto/crypto.service";
 import { previewFixture } from "@/modules/auto-apply/preview/preview-fixture";
 import { AnswerResolutionService } from "@/modules/information-bank/answer-resolution.service";
 import { InformationBankService } from "@/modules/information-bank/information-bank.service";
+import { PreparationAnswerHistoryService } from "./answer-history.service";
 import { FIXTURE_FIELDS } from "./fixture-worker";
 import { PreparationService } from "./preparation.service";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
@@ -11,7 +12,11 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 const f = previewFixture();
 const cryptoService = new CryptoService(f.db);
 const bank = new InformationBankService(f.db, cryptoService);
-const service = new PreparationService(f.db, new AnswerResolutionService(f.db, cryptoService));
+const service = new PreparationService(
+  f.db,
+  new AnswerResolutionService(f.db, cryptoService),
+  new PreparationAnswerHistoryService(f.db, cryptoService),
+);
 async function fixtureJob() {
   const run = await f.run(1, { url: `https://jobs.example.invalid/${crypto.randomUUID()}` });
   const data = run.batch;

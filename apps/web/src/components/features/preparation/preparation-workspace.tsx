@@ -103,6 +103,13 @@ function PreparationContent({ userId }: { userId: string }): ReactElement {
       <DiscoveredJobPicker
         userId={userId}
         pending={pending}
+        preparations={history.data?.items ?? []}
+        onOpen={(id) => {
+          setSelectedId(id);
+          create.reset();
+          review.reset();
+          simulate.reset();
+        }}
         onPrepare={(input) => {
           const same =
             request?.ingestionRunId === input.ingestionRunId &&
@@ -117,7 +124,9 @@ function PreparationContent({ userId }: { userId: string }): ReactElement {
       />
       {create.error && (
         <Alert severity="error">
-          {create.error.message} Retrying the same job preserves the request identity.
+          {create.error.message} If this job already exists, open it in Preparation history below;
+          older records may be on another page. Retrying the same job preserves the request
+          identity.
         </Alert>
       )}
       {review.error && (
@@ -134,6 +143,8 @@ function PreparationContent({ userId }: { userId: string }): ReactElement {
       )}
       {snapshot && (
         <PreparationDetail
+          key={snapshot.id}
+          userId={userId}
           preparation={snapshot}
           pending={pending}
           onRefresh={() => reviewRequest(false)}
@@ -183,6 +194,7 @@ function PreparationContent({ userId }: { userId: string }): ReactElement {
                 disabled={pending}
                 onClick={() => {
                   setSelectedId(item.id);
+                  create.reset();
                   review.reset();
                   simulate.reset();
                 }}

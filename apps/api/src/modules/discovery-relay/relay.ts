@@ -63,7 +63,14 @@ export class DiscoveryRelay {
     if (!this.capabilities) throw new RelayFault("inactive");
     const requestId = crypto.randomUUID();
     const grant = await this.call("start", { taskId, requestId }, discoveryStartResponseSchema);
-    if (!grant.allowed || !grant.query) return { deliveryIds: [], issues: 0, failed: false };
+    if (!grant.allowed)
+      return {
+        deliveryIds: [],
+        issues: 0,
+        failed: grant.state === "quarantined",
+        incomplete: grant.state !== "frozen",
+      };
+    if (!grant.query) throw new RelayFault("unsafe_response");
     const query = providerQuerySchema.parse(grant.query);
     const url = new URL("https://jsearch.p.rapidapi.com/search-v2");
     url.searchParams.set("query", query.query);
@@ -93,7 +100,7 @@ export class DiscoveryRelay {
         },
         discoveryFreezeResponseSchema,
       );
-      return { deliveryIds: [], issues: 0, failed: true };
+      return { deliveryIds: [], issues: 0, failed: true, incomplete: true };
     }
     const frozen = await this.call(
       "freeze",
@@ -104,6 +111,7 @@ export class DiscoveryRelay {
       deliveryIds: frozen.deliveryIds,
       issues: frozen.issueCount,
       failed: frozen.state === "quarantined",
+      incomplete: frozen.state !== "frozen",
     };
   }
   private async deliver(deliveryId: string) {
@@ -181,13 +189,16 @@ export class DiscoveryRelay {
       const work = await this.call("work", {}, discoveryWorkResponseSchema);
       const claim = await this.call("claim", parsed.data, discoveryClaimResponseSchema);
       const deliveryIds = new Set(work.deliveryIds);
+      const taskIds = [...new Set([...work.taskIds, ...claim.taskIds])];
       let issueCount = 0;
       let failed = false;
-      for (const taskId of [...new Set([...work.taskIds, ...claim.taskIds])].slice(0, 3)) {
+      let incomplete = taskIds.length > 3;
+      for (const taskId of taskIds.slice(0, 3)) {
         const fetched = await this.fetchTask(taskId);
         for (const id of fetched.deliveryIds) deliveryIds.add(id);
         issueCount += fetched.issues;
         failed ||= fetched.failed;
+        incomplete ||= fetched.incomplete;
         if (fetched.failed) break;
       }
       let storedBatches = 0;
@@ -197,7 +208,7 @@ export class DiscoveryRelay {
         if (delivery.stored) storedBatches++;
       }
       return json({
-        status: failed || deliveryIds.size > storedBatches ? "partial" : "complete",
+        status: failed || incomplete || deliveryIds.size > storedBatches ? "partial" : "complete",
         runId: claim.runId,
         storedBatches,
         issueCount,

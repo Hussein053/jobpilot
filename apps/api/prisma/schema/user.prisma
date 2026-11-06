@@ -81,6 +81,7 @@ model User {
   autoApply            AutoApplySettings?
   preparations ApplicationPreparation[]
   preparationEvents PreparationEvent[]
+  preparationAnswerUses PreparationAnswerUse[]
   dryRunSimulations DryRunSimulation[]
   dryRunReservations DryRunReservation[]
   autoApplyPolicy      AutoApplyPolicy?

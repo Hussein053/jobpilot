@@ -72,6 +72,7 @@ Bun.serve({
     const json = (value: unknown, status = 200) => Response.json(value, { status, headers });
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (url.pathname === "/health") return json({ ok: true });
+    if (url.pathname === "/api/execution/policy") return json(runtime);
     if (url.pathname === "/test/reset") {
       settings = structuredClone(AUTO_APPLY_DEFAULTS);
       version = 0;

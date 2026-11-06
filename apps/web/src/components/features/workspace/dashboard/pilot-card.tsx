@@ -5,6 +5,7 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Alert, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
@@ -25,6 +26,31 @@ import { useOpenQuestions } from "../../pilot/attention/use-open-questions";
 
 /** Compact read-only pilot presence for the workspace overview; controls live on /pilot. */
 export function PilotStatusCard(): ReactElement {
+  const policy = useApiQuery(
+    { queryKey: ["execution-policy"], queryFn: () => api.execution.policy.get() },
+    { retry: false, gcTime: 0, networkMode: "always" },
+  );
+  if (!policy.data?.unrestrictedAgentsEnabled)
+    return (
+      <Card>
+        <CardContent>
+          <Stack spacing={2}>
+            <Typography variant="body1Strong">DRY_RUN application preparation</Typography>
+            <Typography variant="body2Muted">
+              Autonomous Pilot execution is disabled. Review and simulate synthetic applications
+              without installing an agent or connecting a mailbox.
+            </Typography>
+            <LinkButton href="/preparation" variant="outlined">
+              Open Application Preparation
+            </LinkButton>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  return <PilotStatusWithPolicy />;
+}
+
+function PilotStatusWithPolicy(): ReactElement {
   const agentAvailable = useAgentAvailable();
   // Split so the host poller never mounts on mobile, where no local host can exist.
   return agentAvailable ? <PilotCardWithHost /> : <PilotCardBody health={null} pilot={null} />;

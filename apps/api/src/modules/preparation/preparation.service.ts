@@ -18,6 +18,7 @@ import { readQuota } from "@/modules/auto-apply/preview/quota";
 import { selectResume } from "@/modules/auto-apply/preview/resume-selection";
 import { getExecutionPolicy } from "@/modules/execution/execution-policy";
 import { AnswerResolutionService } from "@/modules/information-bank/answer-resolution.service";
+import { PreparationAnswerHistoryService } from "./answer-history.service";
 import { assertFixtureUrl, FIXTURE_FIELDS, simulateFixture } from "./fixture-worker";
 
 type State = z.infer<typeof preparationStateSchema>;
@@ -36,6 +37,7 @@ export class PreparationService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly resolver = inject(AnswerResolutionService),
+    private readonly answerHistory = inject(PreparationAnswerHistoryService),
   ) {}
   private async lock(tx: Prisma.TransactionClient, userId: string, tokenId: string) {
     const rows = await tx.$queryRaw<
@@ -356,6 +358,9 @@ export class PreparationService {
             },
           },
         });
+        await this.answerHistory.capture(tx, userId, id, state, now);
+        if (Date.now() >= day.resetsAt.getTime())
+          throw conflict("Quota day changed while recording evidence; refresh and retry.");
         return this.view(updated, tx);
       },
       { timeout: 30_000 },

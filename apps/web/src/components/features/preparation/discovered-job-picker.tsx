@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
+import type { Preparation } from "@jobpilot/contracts/preparation";
 import { Alert, Button, LinearProgress, MenuItem, Stack, TextField } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
@@ -12,11 +13,13 @@ import { usePaginationParams } from "@/hooks/use-pagination";
 interface DiscoveredJobPickerProps {
   userId: string;
   pending: boolean;
+  preparations: Preparation[];
+  onOpen(id: string): void;
   onPrepare(input: { ingestionRunId: string; sourceId: string; resumeId?: string }): void;
 }
 
 export function DiscoveredJobPicker(props: DiscoveredJobPickerProps): ReactElement {
-  const { userId, pending, onPrepare } = props;
+  const { userId, pending, preparations, onOpen, onPrepare } = props;
   const pagination = usePaginationParams({ prefix: "prepare-jobs", pageSize: 10 });
   const [runId, setRunId] = useState("");
   const [sourceId, setSourceId] = useState("");
@@ -31,6 +34,11 @@ export function DiscoveredJobPicker(props: DiscoveredJobPickerProps): ReactEleme
   );
   const selectedRun = runs.data?.items.find((run) => run.id === runId);
   const selectedJob = selectedRun?.batch.jobs.find((job) => job.sourceId === sourceId);
+  const existing =
+    selectedJob &&
+    preparations.find(
+      (item) => item.job.sourceId === selectedJob.sourceId || item.job.url === selectedJob.url,
+    );
   return (
     <SectionCard
       title="Choose a discovered job"
@@ -112,10 +120,20 @@ export function DiscoveredJobPicker(props: DiscoveredJobPickerProps): ReactEleme
               </MenuItem>
             ))}
         </TextField>
+        {existing && (
+          <Alert severity="info">
+            This job already has a {existing.status} preparation. Open it to review the existing
+            record; duplicate protection remains active.
+          </Alert>
+        )}
         <Button
           variant="contained"
           disabled={!selectedJob || pending}
           onClick={() => {
+            if (existing) {
+              onOpen(existing.id);
+              return;
+            }
             if (selectedJob)
               onPrepare({
                 ingestionRunId: runId,
@@ -124,7 +142,7 @@ export function DiscoveredJobPicker(props: DiscoveredJobPickerProps): ReactEleme
               });
           }}
         >
-          Prepare dry-run application
+          {existing ? "Open existing preparation" : "Prepare dry-run application"}
         </Button>
       </Stack>
     </SectionCard>

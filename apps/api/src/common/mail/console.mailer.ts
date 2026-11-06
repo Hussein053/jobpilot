@@ -1,16 +1,15 @@
 import { injectable } from "@needle-di/core";
 import { render } from "@react-email/render";
 import { logger } from "@/common/logger";
+import { env } from "@/env";
 import type { Mailer, MailMessage } from "./mailer";
 
-/**
- * Logs the rendered email (incl. any magic links) instead of sending. Bound to
- * the {@link MAILER} token when RESEND_API_KEY is unset, so local dev can copy
- * links out of the API console without a real email provider.
- */
+// Local development may log links; a production mail outage must not expose account tokens.
 @injectable()
 export class ConsoleMailer implements Mailer {
   async send({ to, subject, react }: MailMessage): Promise<void> {
+    if (env.NODE_ENV === "production")
+      throw new Error("Transactional email is unavailable; configure a mail provider.");
     const text = await render(react, { plainText: true });
     logger.info({ to, subject }, `[mail] would send "${subject}" to ${to}\n${text}`);
   }

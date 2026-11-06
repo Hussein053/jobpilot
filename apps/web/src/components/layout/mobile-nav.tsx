@@ -60,7 +60,6 @@ export function MobileNav(): ReactElement {
   const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
   const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));
   const value = activePrimary?.href ?? (moreActive ? MORE_VALUE : false);
-  // Pilot sits on the tab bar now; More carries a badge only while a badged item lives in the drawer.
   const moreBadge = moreItems.find((item) => item.badge)?.badge;
 
   const renderTab = (item: NavItem): ReactElement => (

@@ -26,6 +26,8 @@ model ApplicationPreparation {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   events PreparationEvent[]
+  answerUses PreparationAnswerUse[]
+  @@unique([id, userId])
   @@unique([userId, requestId])
   @@unique([userId, sourceId])
   @@unique([userId, url])
@@ -45,4 +47,21 @@ model PreparationEvent {
   @@unique([preparationId, revision])
   @@index([userId, createdAt])
   @@map("preparation_events")
+}
+
+model PreparationAnswerUse {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preparationId String @map("preparation_id")
+  preparation ApplicationPreparation @relation(fields: [preparationId, userId], references: [id, userId], onDelete: Cascade)
+  questionId String @map("question_id")
+  entryId String @map("entry_id")
+  entryVersion Int @map("entry_version")
+  keyCipher String @map("key_cipher")
+  payloadCipher String @map("payload_cipher")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([preparationId, questionId])
+  @@index([userId, preparationId])
+  @@map("preparation_answer_uses")
 }

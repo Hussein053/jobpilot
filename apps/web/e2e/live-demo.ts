@@ -44,6 +44,11 @@ try {
     check(session?.sameSite).toBe("Lax");
     steps.push("HTTPS session cookie is Secure, HttpOnly and SameSite=Lax");
   }
+  await page.goto(`${web}/pilot`);
+  await check(page.getByText(/Autonomous Pilot execution is disabled/)).toBeVisible();
+  await check(page.getByRole("link", { name: "Install the agent", exact: true })).toHaveCount(0);
+  await check(page.getByRole("link", { name: "Connect Gmail", exact: true })).toHaveCount(0);
+  steps.push("disabled Pilot points to preparation without agent installation or mailbox setup");
   await page.goto(`${web}/preparation`);
   await check(page.getByText(/DRY_RUN MVP — no applications will be submitted/)).toBeVisible();
   await page.getByRole("button", { name: "View preparation", exact: true }).first().click();
@@ -124,6 +129,44 @@ try {
   for (const control of ["Submit", "Enter", "Continue", "Next", "Apply", "Save"])
     check(state.simulation.evidence).toContain(`blocked_control:${control}`);
   steps.push("persisted audit and all six blocked controls verified from real backend");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Review historical answers", exact: true }).click();
+  await page.getByRole("button", { name: "Reveal historical answers", exact: true }).click();
+  const historyDialog = page.getByRole("dialog");
+  await check(historyDialog).toContainText("do not authorize answer reuse");
+  await check(historyDialog.getByText(demo.email, { exact: true })).toBeVisible();
+  await check(historyDialog).toContainText("SYNTHETIC FIXTURE ONLY");
+  await page.screenshot({ path: "/tmp/jobpilot-mvp/answer-history-phone.png", fullPage: true });
+  await historyDialog.getByRole("button", { name: "Close", exact: true }).click();
+  await check(page.getByRole("dialog")).toHaveCount(0);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  steps.push(
+    "explicit private answer-history reveal verified; archived values unmount when closed",
+  );
+
+  await page.getByRole("combobox", { name: "Discovery batch", exact: true }).click();
+  await page.getByRole("option").filter({ hasText: "10 jobs" }).click();
+  await page.getByRole("combobox", { name: "Job to prepare", exact: true }).click();
+  await page
+    .getByRole("option", { name: "Program Manager · Synthetic Demo Company", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Open existing preparation", exact: true }).click();
+  await check(page.getByText(/Simulation complete. No application was submitted./)).toBeVisible();
+  const runs = z
+    .object({ items: z.array(z.object({ batch: z.object({ jobs: z.array(z.unknown()) }) })) })
+    .parse(
+      await (await context.request.get(`${api}/integrations/n8n/runs?page=1&limit=10`)).json(),
+    );
+  check(runs.items[0]?.batch.jobs.length).toBe(10);
+  const preparations = z
+    .object({ pagination: z.object({ total: z.number() }) })
+    .parse(await (await context.request.get(`${api}/preparations?page=1&limit=10`)).json());
+  check(preparations.pagination.total).toBe(1);
+  steps.push(
+    "existing job opens its preparation without a duplicate; nine fresh synthetic jobs remain",
+  );
+
   await page.setViewportSize({ width: 390, height: 844 });
   await check
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))

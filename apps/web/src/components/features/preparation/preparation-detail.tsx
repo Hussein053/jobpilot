@@ -1,15 +1,18 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import type { Preparation } from "@jobpilot/contracts/preparation";
 import { Alert, Button, Chip, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { intentLabels } from "@/components/features/information-bank/bank-options";
 import { SectionCard } from "@/components/ui/layout";
+import { useConfirm } from "@/providers/confirm-provider";
+import { PreparationAnswerHistoryDialog } from "./preparation-answer-history-dialog";
 import { preparationEvidenceLabel, questionReasonLabel } from "./preparation-labels";
 
 interface PreparationDetailProps {
   preparation: Preparation;
+  userId: string;
   pending: boolean;
   onRefresh(): void;
   onApprove(): void;
@@ -17,7 +20,9 @@ interface PreparationDetailProps {
 }
 
 export function PreparationDetail(props: PreparationDetailProps): ReactElement {
-  const { preparation, pending, onRefresh, onApprove, onSimulate } = props;
+  const { preparation, userId, pending, onRefresh, onApprove, onSimulate } = props;
+  const confirm = useConfirm();
+  const [showAnswerHistory, setShowAnswerHistory] = useState(false);
   const complete = preparation.status === "simulated";
   return (
     <Stack spacing={3}>
@@ -135,6 +140,31 @@ export function PreparationDetail(props: PreparationDetailProps): ReactElement {
             ))}
           </Stack>
         </SectionCard>
+      )}
+      {complete && (
+        <Button
+          variant="outlined"
+          onClick={async () => {
+            if (
+              await confirm({
+                title: "Reveal private historical answers?",
+                description:
+                  "This displays encrypted answer copies captured during this simulation, including sensitive answers. Review them in a private place. These historical values never grant permission to reuse an answer or submit an application.",
+                confirmLabel: "Reveal historical answers",
+              })
+            )
+              setShowAnswerHistory(true);
+          }}
+        >
+          Review historical answers
+        </Button>
+      )}
+      {complete && showAnswerHistory && (
+        <PreparationAnswerHistoryDialog
+          userId={userId}
+          preparationId={preparation.id}
+          onClose={() => setShowAnswerHistory(false)}
+        />
       )}
       <SectionCard title="Audit history">
         <Stack spacing={1}>

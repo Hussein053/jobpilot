@@ -17,6 +17,8 @@ export const SECRET_CONTEXTS = {
   informationEntry: "information:entry",
   informationAudit: "information:audit",
   informationLookup: "information:lookup",
+  preparationAnswerKey: "preparation:answerKey",
+  preparationAnswerValue: "preparation:answerValue",
 } as const;
 
 export type SecretContext = (typeof SECRET_CONTEXTS)[keyof typeof SECRET_CONTEXTS];

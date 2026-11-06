@@ -5,6 +5,12 @@ signed ingestion contract. It does not change, activate, or contact the live n8n
 The export contains credential references and personal resource identifiers and must not be
 committed. Its `active: false` value describes the export, not verified live activation state.
 
+Implementation follow-up: this original analysis is preserved as the mapping/design baseline.
+The structured adapter, planner, ledger, relay library and inactive companion now exist in the
+development stack. See [secure-discovery-relay.md](secure-discovery-relay.md) for implemented
+behavior and [external-setup-handoff.md](external-setup-handoff.md) for the single remaining
+owner-action list. Actual provider, Cloud workflow and managed-signing activation remain unverified.
+
 ## Observed structure
 
 `Schedule Trigger` feeds `Scheduled Search Request` and `AI Agent`. The agent uses Gemini,
