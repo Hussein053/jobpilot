@@ -9,17 +9,20 @@ const id = "20e40b66-f3e7-47ca-9969-d66e90258846";
 let preparation: Preparation | null = null;
 let answersApproved = false;
 let simulated = 0;
+let created = 0;
 let answerHistoryReads = 0;
 let referenceOnlyHistory = false;
 export function resetPreparationFixture() {
   preparation = null;
   answersApproved = false;
   simulated = 0;
+  created = 0;
   answerHistoryReads = 0;
   referenceOnlyHistory = false;
 }
 export const preparationFixtureState = () => ({
   preparationSimulations: simulated,
+  preparationCreates: created,
   answerHistoryReads,
 });
 
@@ -119,6 +122,7 @@ export async function handlePreparationFixture(
   if (path === "/api/preparations" && request.method === "POST") {
     if (!createPreparationSchema.safeParse(await request.json()).success)
       return json({ message: "Invalid preparation" }, 422);
+    created++;
     preparation ??= fixture();
     return json(preparation);
   }

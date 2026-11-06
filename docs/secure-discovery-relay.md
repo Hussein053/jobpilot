@@ -23,6 +23,10 @@ a caller-provided subject header is not authentication. Do not install the fixtu
 in a deployment. TLS, managed caller authentication and the runtime bindings must be verified
 before a separately authorized release.
 
+One invocation processes at most three queued tasks and five deliveries. Deferred tasks,
+unfinished/denied grants or undelivered batches report `partial`; completion is not inferred
+from an empty delivery list. An allowed grant without a verified query stops before fetching.
+
 The JobPilot origin, integration identity, public-key pin, provider host and Vault key/version
 are deployment bindings, never caller-controlled URLs or signing inputs. Redirects and cookies
 are disabled on outbound requests; job URLs are never fetched. Signatures returned by a managed

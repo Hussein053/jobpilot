@@ -65,7 +65,7 @@ try {
   )
     throw new Error("Server execution boundary is invalid.");
   const resumes = [];
-  for (const role of ["Business Analyst", "Program Manager"]) {
+  for (const role of ["Business Analyst", "Project Manager", "Program Manager"]) {
     const resume = idSchema.parse(
       await request("/api/resumes/", {
         label: `SYNTHETIC ${role}`,
@@ -117,8 +117,17 @@ try {
     job_description:
       "Synthetic discovery fixture. Employer eligibility and match score remain unverified.",
   };
-  const mapped = mapJSearch({ status: "OK", data: { jobs: [rawJob, rawJob] } });
-  if (mapped.jobs.length !== 1) throw new Error("Structured discovery deduplication failed.");
+  const freshJobs = ["Program Manager", "Project Manager", "Business Analyst"].flatMap((role) =>
+    [1, 2, 3].map((sample) => ({
+      ...rawJob,
+      job_id: crypto.randomUUID(),
+      job_title: role,
+      employer_name: `Synthetic ${role} Company ${sample}`,
+      job_apply_link: `https://jobs.example.invalid/${crypto.randomUUID()}`,
+    })),
+  );
+  const mapped = mapJSearch({ status: "OK", data: { jobs: [rawJob, rawJob, ...freshJobs] } });
+  if (mapped.jobs.length !== 10) throw new Error("Structured discovery deduplication failed.");
   const batch = { schemaVersion: 1, runId: crypto.randomUUID(), jobs: mapped.jobs };
   const bytes = JSON.stringify(batch);
   const timestamp = Math.floor(Date.now() / 1000).toString();

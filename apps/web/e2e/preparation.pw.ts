@@ -101,7 +101,24 @@ test("reviews unknown answers and exceptions before recording a clearly simulate
   );
   await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
   expect((await (await request.get(`${fixtureApi}/test/state`)).json()).answerHistoryReads).toBe(2);
+  await page.getByRole("button", { name: "Open existing preparation", exact: true }).click();
+  await expect(page.getByText(/Simulation complete. No application was submitted./)).toBeVisible();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).preparationCreates).toBe(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+});
+
+test("directs disabled Pilot users to preparation without installation or mailbox setup", async ({
+  page,
+}) => {
+  await page.goto("/pilot");
+  await expect(page.getByText(/Autonomous Pilot execution is disabled/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Install the agent", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Connect Gmail", exact: true })).toHaveCount(0);
+  await page.getByRole("link", { name: "Open Application Preparation", exact: true }).click();
+  await expect(page).toHaveURL(/\/preparation$/);
+  await expect(
+    page.getByRole("button", { name: "Prepare dry-run application", exact: true }),
+  ).toBeDisabled();
 });

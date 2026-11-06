@@ -38,7 +38,7 @@ With the API running and the same isolated environment:
 bun --cwd=apps/api run scripts/dry-run-demo.ts
 ```
 
-The script refuses any database except loopback `jobpilot_mvp_local`. It creates a random synthetic account using normal registration, two resume versions approved through the review API, and an approved contact answer. It maps a structured JSearch-shaped fixture, verifies deduplication, signs exact ingestion bytes using a transient in-memory Ed25519 key, and confirms the signed API returns `stored_only`. Only the public verification key enters the local database. No n8n Cloud workflow or provider is contacted.
+The script refuses any database except loopback `jobpilot_mvp_local`. It creates a random synthetic account using normal registration, three resume profiles approved through the review API, and an approved contact answer. It maps ten distinct structured JSearch-shaped fixture jobs across the three configured roles, verifies deduplication, signs exact ingestion bytes using a transient in-memory Ed25519 key, and confirms the signed API returns `stored_only`. Only the public verification key enters the local database. No n8n Cloud workflow or provider is contacted. Browser verification consumes one job, leaving nine for user preparation.
 
 It then checks the server's DRY_RUN policy, evaluates the conservative policy preview, creates a preparation and verifies simulation is refused for the unanswered required experience question. No `Application` record may exist. Generated local login credentials and session are written to mode-0600 `/tmp/jobpilot-mvp/demo.json`; do not commit, upload or copy that private file into reports.
 

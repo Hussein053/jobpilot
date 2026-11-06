@@ -44,8 +44,7 @@ const EnvSchema = z.object({
   // Public API origin for sign-in callbacks: `${base}/api/auth/providers/{provider}/callback`.
   AUTH_OAUTH_REDIRECT_BASE: z.string().default("http://localhost:4101"),
 
-  // Transactional email (Resend). Optional: when unset, the app logs the email
-  // body (incl. magic links) instead of sending - fine for local dev.
+  // Without Resend, development logs email links; production rejects mail without rendering it.
   RESEND_API_KEY: z.string().optional(),
   // Sender of account emails. `onboarding@resend.dev` is Resend's no-domain test
   // sender (only delivers to the Resend account owner); production needs a verified domain.
