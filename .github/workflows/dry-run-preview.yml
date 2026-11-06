@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   preview:
-    if: (github.head_ref == 'feat/dry-run-mvp-reviewed' || github.head_ref == 'feat/preparation-answer-history') && github.event.pull_request.head.repo.full_name == github.repository && github.event.repository.private == false
+    if: (github.head_ref == 'feat/dry-run-mvp-reviewed' || github.head_ref == 'feat/preparation-answer-history' || github.head_ref == 'feat/jobpilot-dry-run-release') && github.event.pull_request.head.repo.full_name == github.repository && github.event.repository.private == false
     runs-on: ubuntu-latest
     timeout-minutes: 300
     services:

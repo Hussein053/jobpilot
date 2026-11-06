@@ -32,6 +32,11 @@ Reviews do not imply production readiness, external activation or permission to 
 No PR beyond the already-authorized #1–#3 merge sequence is merged by this follow-up. The
 integrated development branch contains the stacked features without changing main.
 
+A consolidated draft integration PR on `feat/jobpilot-dry-run-release` targets main so the
+complete tree can be tested and reviewed in one place. It does not close, merge or replace the
+stacked PRs automatically. Only this additional explicit owner branch is allowed to request a
+synthetic preview; public-repository and same-owner checks remain required.
+
 ## Remaining implementation limits
 
 - The in-process fixture worker is demonstrable, but is not an employer browser. Unrestricted
