@@ -169,7 +169,19 @@ Bun.serve({
           totalPages: history.length ? 1 : 0,
         },
       });
-    if (url.pathname === "/api/resumes") return json([currentResume]);
+    if (url.pathname === "/api/resumes")
+      return json([
+        currentResume,
+        {
+          ...currentResume,
+          id: "4ddf9f63-0145-4ab3-bb69-41fab604a464",
+          label: "Inactive approved synthetic resume",
+          active: false,
+          approved: true,
+          approvedVersion: currentResume.version,
+          approvedAt: new Date().toISOString(),
+        },
+      ]);
     if (url.pathname === `/api/resumes/${resumeId}`) return json(currentResume);
     if (url.pathname === `/api/resumes/${resumeId}/events`) {
       let subscriber: ReadableStreamDefaultController<Uint8Array> | undefined;

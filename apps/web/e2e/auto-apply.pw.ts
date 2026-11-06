@@ -44,6 +44,27 @@ test("saves validated preferences, reverts drafts, and displays history without 
   );
 });
 
+test("fixed selection excludes an inactive resume even when its version is approved", async ({
+  page,
+  request,
+}) => {
+  const approved = await request.post(
+    `${fixtureApi}/api/resumes/1578c15d-e419-4dd5-b23d-16ec6756e3da/review`,
+    {
+      data: { action: "approve", expectedVersion: 1, expectedReviewRevision: 0 },
+    },
+  );
+  expect(approved.ok()).toBe(true);
+  await page.goto("/settings/auto-apply");
+  await page.getByRole("combobox", { name: "Resume selection", exact: true }).click();
+  await page.getByRole("option", { name: "Fixed approved resume", exact: true }).click();
+  await page.getByRole("combobox", { name: "Fixed resume", exact: true }).click();
+  await expect(page.getByRole("option", { name: "Synthetic resume", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("option", { name: "Inactive approved synthetic resume", exact: true }),
+  ).toHaveCount(0);
+});
+
 test("retains a stale draft and requires explicit reload before resolving a conflict", async ({
   page,
   request,
