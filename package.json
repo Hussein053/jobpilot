@@ -11,7 +11,7 @@
     "dev:api": "bun --cwd=apps/api run dev",
     "dev:web": "bun --cwd=apps/web run dev",
     "dev:terminal": "dotnet run --project apps/terminal",
-    "test": "bun --cwd=apps/api run test && bun --cwd=packages/contracts run test",
+    "test": "bun --cwd=apps/api run test && bun --cwd=packages/contracts run test && bun --cwd=apps/web run test",
     "db:tunnel": "bash apps/api/scripts/db-tunnel.sh",
     "db:setup": "bun --cwd=apps/api run db:generate && bun --cwd=apps/api run db:migrate:apply && bun --cwd=apps/api run db:seed",
     "build:web": "bun --cwd=apps/web run build",

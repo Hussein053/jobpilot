@@ -1,0 +1,84 @@
+name: Temporary DRY_RUN HTTPS preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: synthetic-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: (github.head_ref == 'feat/dry-run-mvp-reviewed' || github.head_ref == 'feat/preparation-answer-history' || github.head_ref == 'feat/jobpilot-dry-run-release') && github.event.pull_request.head.repo.full_name == github.repository && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: jobpilot_fixture
+          POSTGRES_PASSWORD: local_synthetic_only
+          POSTGRES_DB: jobpilot_mvp_local
+        ports:
+          - 15432:5432
+        options: >-
+          --health-cmd "pg_isready -U jobpilot_fixture -d jobpilot_mvp_local"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PREVIEW_PR_NUMBER: ${{ github.event.pull_request.number }}
+      PREVIEW_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Install verification browser
+        run: bunx playwright install chromium --with-deps --only-shell
+        working-directory: apps/web
+      - name: Test preview metadata publication
+        run: python3 -m unittest discover -s .github/preview -p "test_*.py"
+      - name: Start and verify expiring synthetic HTTPS preview
+        run: python3 .github/preview/start.py
+      - name: Publish URL and encrypted fixture access
+        uses: actions/upload-artifact@v7
+        with:
+          name: synthetic-https-preview
+          path: preview-artifact/
+          retention-days: 1
+          overwrite: true
+          if-no-files-found: error
+      - name: Publish verified URL and encrypted access metadata
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 .github/preview/publish.py
+      - name: Publish sanitized failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: synthetic-preview-diagnostics
+          path: preview-failure.json
+          retention-days: 1
+          if-no-files-found: ignore
+      - name: Keep the verified preview available until expiry
+        run: |
+          python3 - <<'PY'
+          import json,time,urllib.request
+          from datetime import datetime
+          from pathlib import Path
+          state=json.loads(Path('preview-artifact/preview.json').read_text())
+          expires=datetime.fromisoformat(state['expiresAt'].replace('Z','+00:00')).timestamp()
+          print('Verified synthetic preview active until',state['expiresAt'],flush=True)
+          while time.time()<expires:
+              with urllib.request.urlopen(state['url']+'/preview-status',timeout=20) as response:
+                  if json.load(response)['mode']!='DRY_RUN':raise SystemExit('Execution boundary unavailable')
+              time.sleep(min(45,max(0,expires-time.time())))
+          Path('/tmp/jobpilot-preview/gateway-state.json').unlink(missing_ok=True)
+          print('Preview expired; workflow runner cleanup stops all processes.')
+          PY

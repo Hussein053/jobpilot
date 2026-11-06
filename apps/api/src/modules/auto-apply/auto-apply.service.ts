@@ -1,5 +1,4 @@
 import {
-  AUTO_APPLY_DEFAULTS,
   type AutoApplyPreferences,
   autoApplyPreferencesSchema,
   patchAutoApplySettingsSchema,
@@ -11,17 +10,7 @@ import { prismaCode } from "@/common/errors/prisma";
 import { toInputJson } from "@/common/json";
 import { type AutoApplyPolicy, PrismaClient } from "@/generated/prisma/client";
 import { getExecutionPolicy } from "@/modules/execution/execution-policy";
-
-function preferences(row: AutoApplyPolicy | null): AutoApplyPreferences {
-  if (!row) return autoApplyPreferencesSchema.parse(AUTO_APPLY_DEFAULTS);
-  const { userId: _, version: __, updatedAt: ___, ...fields } = row;
-  return autoApplyPreferencesSchema.parse({
-    ...fields,
-    workArrangements: fields.workArrangements.map((value) =>
-      value === "OnSite" ? "On-site" : value,
-    ),
-  });
-}
+import { policyPreferences } from "./auto-apply.preferences";
 
 function stored(value: AutoApplyPreferences) {
   return {
@@ -46,7 +35,7 @@ export class AutoApplyService {
   }
 
   private async response(userId: string, row: AutoApplyPolicy | null) {
-    const settings = preferences(row);
+    const settings = policyPreferences(row);
     const approved = await this.prisma.resume.findMany({
       where: {
         userId,
@@ -72,9 +61,10 @@ export class AutoApplyService {
     let saved: AutoApplyPolicy;
     try {
       saved = await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
         const existing = await tx.autoApplyPolicy.findUnique({ where: { userId } });
         if ((existing?.version ?? 0) !== expectedVersion) throw stale();
-        const previous = preferences(existing);
+        const previous = policyPreferences(existing);
         const merged = autoApplyPreferencesSchema.safeParse({ ...previous, ...changes });
         if (!merged.success) throw unprocessable("Invalid settings", merged.error.flatten());
         const next = merged.data;

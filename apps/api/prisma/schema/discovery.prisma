@@ -1,0 +1,154 @@
+enum DiscoveryTrigger {
+  scheduled
+  manual
+  @@map("discovery_trigger")
+}
+enum DiscoveryTaskState {
+  planned
+  fetch_started
+  frozen
+  quarantined
+  @@map("discovery_task_state")
+}
+enum DiscoveryDeliveryState {
+  pending
+  in_flight
+  retry_wait
+  stored
+  quarantined
+  auth_stopped
+  @@map("discovery_delivery_state")
+}
+enum DiscoveryIdentityKind {
+  source
+  url
+  @@map("discovery_identity_kind")
+}
+enum DiscoveryFailure {
+  provider_uncertain
+  mapping_invalid
+  identity_conflict
+  transport_error
+  rate_limited
+  remote_error
+  bad_payload
+  auth_failed
+  body_conflict
+  invalid_receipt
+  attempt_limit
+  @@map("discovery_failure")
+}
+enum DiscoveryEventKind {
+  claimed
+  provider_started
+  provider_failed
+  frozen
+  delivery_leased
+  stored
+  retry_wait
+  quarantined
+  auth_stopped
+  @@map("discovery_event_kind")
+}
+model DiscoveryPolicy {
+  userId String @id @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled Boolean @default(false)
+  maxProviderRequestsPerDay Int @default(0) @map("max_provider_requests_per_day")
+  rolesPerSlot Int @default(1) @map("roles_per_slot")
+  roleCursor Int @default(0) @map("role_cursor")
+  authBlockedAt DateTime? @map("auth_blocked_at")
+  providerBlockedUntil DateTime? @map("provider_blocked_until")
+  providerAuthBlockedAt DateTime? @map("provider_auth_blocked_at")
+  @@map("discovery_policies")
+}
+model DiscoveryRun {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  integrationId String @map("integration_id")
+  integration IngestionIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  requestId String @map("request_id")
+  requestDigest String @map("request_digest")
+  trigger DiscoveryTrigger
+  slotKey String @map("slot_key")
+  slotAt DateTime @map("slot_at")
+  settingsVersion Int @map("settings_version")
+  plan Json
+  createdAt DateTime @default(now()) @map("created_at")
+  tasks DiscoveryTask[]
+  @@unique([integrationId, requestId])
+  @@unique([userId, slotKey])
+  @@index([userId, createdAt])
+  @@map("discovery_runs")
+}
+model DiscoveryTask {
+  id String @id @default(uuid())
+  runId String @map("run_id")
+  run DiscoveryRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  position Int
+  role String
+  query Json
+  state DiscoveryTaskState @default(planned)
+  fetchRequestId String? @map("fetch_request_id")
+  startedAt DateTime? @map("started_at")
+  freezeDigest String? @map("freeze_digest")
+  mapping Json?
+  failure DiscoveryFailure?
+  createdAt DateTime @default(now()) @map("created_at")
+  deliveries DiscoveryDelivery[]
+  @@unique([runId, position])
+  @@index([state, startedAt])
+  @@map("discovery_tasks")
+}
+model DiscoveryDelivery {
+  id String @id @default(uuid())
+  taskId String @map("task_id")
+  task DiscoveryTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  runId String @unique @map("run_id")
+  body String
+  digest String
+  state DiscoveryDeliveryState @default(pending)
+  attempts Int @default(0)
+  leaseId String? @map("lease_id")
+  leaseUntil DateTime? @map("lease_until")
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at")
+  lastFailure DiscoveryFailure? @map("last_failure")
+  lastStatus Int? @map("last_status")
+  receiptId String? @map("receipt_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@index([state, nextAttemptAt])
+  @@map("discovery_deliveries")
+}
+model DiscoveredJob {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshot Json
+  firstSeenAt DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+  identities DiscoveryIdentity[]
+  @@unique([id, userId])
+  @@index([userId, lastSeenAt])
+  @@map("discovered_jobs")
+}
+model DiscoveryIdentity {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  jobId String @map("job_id")
+  job DiscoveredJob @relation(fields: [jobId, userId], references: [id, userId], onDelete: Cascade)
+  kind DiscoveryIdentityKind
+  value String
+  @@unique([userId, kind, value])
+  @@map("discovery_identities")
+}
+model DiscoveryEvent {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind DiscoveryEventKind
+  metadata Json
+  createdAt DateTime @default(now()) @map("created_at")
+  @@index([userId, createdAt])
+  @@map("discovery_events")
+}

@@ -41,7 +41,8 @@ const navGroups: NavGroup[] = [
     label: "Core",
     items: [
       { label: "Workspace", href: "/workspace", icon: Dashboard, primary: true },
-      { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "questions", primary: true },
+      { label: "Preparation", href: "/preparation", icon: Description, primary: true },
+      { label: "Pilot history", href: "/pilot", icon: SmartToy, badge: "questions" },
       { label: "Inbox", href: "/inbox", icon: Inbox, primary: true },
       { label: "Analytics", href: "/analytics", icon: Insights, primary: true },
     ],
@@ -64,6 +65,7 @@ const navGroups: NavGroup[] = [
         matchHrefs: ["/resumes", "/cover-letters"],
       },
       { label: "Boards", href: "/boards", icon: BusinessCenter },
+      { label: "Information Bank", href: "/information-bank", icon: Description },
       { label: "Portfolio", href: "/portfolio", icon: Public },
     ],
   },

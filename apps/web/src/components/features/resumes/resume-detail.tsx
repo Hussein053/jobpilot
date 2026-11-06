@@ -14,6 +14,7 @@ import { ExtractionCard } from "./detail/extraction-card";
 import { ResumeHeaderBar } from "./detail/header-bar";
 import { ResumePdfPreview } from "./detail/pdf-preview";
 import { ProfileMismatchCard } from "./detail/profile-mismatch-card";
+import { ResumeReviewCard } from "./detail/review-card";
 import { SourceUploadCard } from "./detail/source-upload-card";
 import { SuggestedRewriteCard } from "./detail/suggested-rewrite-card";
 import { VariantsPanel } from "./detail/variants-panel";
@@ -73,6 +74,7 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
     <Stack direction={{ xs: "column", lg: "row" }} spacing={3} sx={{ alignItems: "flex-start" }}>
       <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: "100%" }}>
         <ResumeHeaderBar resume={resume} />
+        <ResumeReviewCard resume={resume} />
         <ProfileMismatchCard mismatches={resume.profileMismatches} />
         <SuggestedRewriteCard resume={resume} />
 

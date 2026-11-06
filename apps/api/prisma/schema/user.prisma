@@ -75,9 +75,21 @@ model User {
   oauthAccounts      OAuthAccount[]
 
   resumes              Resume[]
+  resumeReviewEvents ResumeReviewEvent[]
+  answerEntries AnswerEntry[]
+  answerEntryEvents AnswerEntryEvent[]
   autoApply            AutoApplySettings?
+  preparations ApplicationPreparation[]
+  preparationEvents PreparationEvent[]
+  preparationAnswerUses PreparationAnswerUse[]
+  dryRunSimulations DryRunSimulation[]
+  dryRunReservations DryRunReservation[]
   autoApplyPolicy      AutoApplyPolicy?
   autoApplyAuditEvents AutoApplyAuditEvent[]
+  discoveryPolicy DiscoveryPolicy?
+  discoveryRuns DiscoveryRun[]
+  discoveredJobs DiscoveredJob[]
+  discoveryEvents DiscoveryEvent[]
   ingestionIntegrations IngestionIntegration[]
   applications         Application[]
   campaigns            Campaign[]

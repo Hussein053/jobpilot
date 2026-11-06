@@ -2,6 +2,7 @@ import { inject, injectable } from "@needle-di/core";
 import { createElement } from "react";
 import { generateOpaqueToken, hashPassword, hashToken } from "@/common/auth";
 import { badRequest, conflict, notFound } from "@/common/errors";
+import { logger } from "@/common/logger";
 import {
   EmailChangeEmail,
   emailChangeEmailSubject,
@@ -119,11 +120,15 @@ export class VerificationService {
         PASSWORD_RESET_TTL_MS,
       );
       const link = `${env.APP_URL}/reset-password?token=${raw}`;
-      await this.mailer.send({
-        to: user.email,
-        subject: passwordResetEmailSubject,
-        react: createElement(PasswordResetEmail, { link }),
-      });
+      try {
+        await this.mailer.send({
+          to: user.email,
+          subject: passwordResetEmailSubject,
+          react: createElement(PasswordResetEmail, { link }),
+        });
+      } catch {
+        logger.error("Password-reset email delivery failed");
+      }
     }
     return { ok: true };
   }

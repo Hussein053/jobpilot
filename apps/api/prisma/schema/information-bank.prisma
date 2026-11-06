@@ -1,0 +1,94 @@
+enum AnswerIntent {
+  contact
+  employment_preferences
+  minimum_salary
+  desired_salary
+  education
+  experience_sql_years
+  experience_total_years
+  certifications
+  work_authorization
+  sponsorship
+  immigration_status
+  criminal_history
+  disability
+  eeo
+  legal_attestation
+  company_motivation
+  role_motivation
+  other
+  @@map("answer_intent")
+}
+enum AnswerCategory {
+  identity
+  employment_preferences
+  compensation
+  education
+  experience
+  certifications
+  work_eligibility
+  company_specific
+  other
+  @@map("answer_category")
+}
+enum AnswerScope {
+  global
+  role
+  company
+  job
+  @@map("answer_scope")
+}
+enum AnswerStatus {
+  draft
+  approved
+  revoked
+  @@map("answer_status")
+}
+enum AnswerEventAction {
+  created
+  edited
+  approved
+  revoked
+  deleted
+  @@map("answer_event_action")
+}
+model AnswerEntry {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version Int @default(1)
+  intent AnswerIntent
+  normalizedIntent String @map("normalized_intent")
+  category AnswerCategory
+  scope AnswerScope
+  scopeFingerprint String @map("scope_fingerprint")
+  questionKeys String[] @map("question_keys")
+  searchTokens String[] @map("search_tokens")
+  status AnswerStatus @default(draft)
+  keyCipher String @map("key_cipher")
+  payloadCipher String @map("payload_cipher")
+  approvedAt DateTime? @map("approved_at")
+  reviewDueAt DateTime? @map("review_due_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@unique([userId, normalizedIntent, scopeFingerprint])
+  @@index([userId, category, status])
+  @@index([questionKeys], type: Gin)
+  @@index([searchTokens], type: Gin)
+  @@map("answer_entries")
+}
+model AnswerEntryEvent {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entryId String @map("entry_id")
+  version Int
+  action AnswerEventAction
+  actorTokenId String @map("actor_token_id")
+  // Only the entry row holds the wrapped per-entry key; deletion removes access to old values.
+  payloadCipher String? @map("payload_cipher")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([entryId, version])
+  @@index([userId, createdAt])
+  @@map("answer_entry_events")
+}

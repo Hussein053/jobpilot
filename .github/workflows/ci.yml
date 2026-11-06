@@ -3,12 +3,23 @@ name: CI
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  pull_request: {}
 
 jobs:
   ci:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: fixture
+          POSTGRES_PASSWORD: fixture
+          POSTGRES_DB: jobpilot_settings_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fixture -d jobpilot_settings_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     concurrency:
       group: ci-${{ github.ref }}
       cancel-in-progress: true
@@ -77,8 +88,7 @@ jobs:
         run: bun run typecheck
         working-directory: apps/api
 
-      # Still no services. The admin guard test imports a real controller, so env.ts has to validate -
-      # these are dummies: pg pools are lazy, and the 401/403 paths it asserts never issue a query.
+      # Unit tests keep DB access disabled; the isolated integration step opts in separately.
       - name: Test API
         run: bun run test
         working-directory: apps/api
@@ -90,8 +100,39 @@ jobs:
         run: bun run test
         working-directory: packages/contracts
 
+      - name: Migrate isolated fixture database
+        run: bun run db:migrate:apply
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/jobpilot_settings_test
+
+      - name: Test database races, approval, encryption, and preservation
+        run: bun test src/modules/auto-apply/auto-apply.postgres.test.ts src/modules/ingestion/ingestion.postgres.test.ts src/modules/resume/review/resume-review.postgres.test.ts src/modules/information-bank/ src/modules/auto-apply/preview/ src/modules/discovery/ src/modules/preparation/
+        working-directory: apps/api
+        env:
+          JOBPILOT_TEST_DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/jobpilot_settings_test
+          STORAGE_ROOT: /tmp/jobpilot-fixture-storage
+
+      - name: Check isolated fixture schema drift
+        run: bun x prisma migrate diff --from-config-datasource --to-schema prisma/schema --exit-code
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/jobpilot_settings_test
+
+      - name: Test web
+        run: bun run test
+        working-directory: apps/web
+
       - name: Typegen web
         run: bun run typegen
+        working-directory: apps/web
+
+      - name: Install fixture browser
+        run: bun x playwright install --with-deps chromium --only-shell
+        working-directory: apps/web
+
+      - name: Test settings and offline privacy in fixture browser
+        run: bun run test:e2e --max-failures=1
         working-directory: apps/web
 
       - name: Cache Next.js build

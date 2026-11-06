@@ -12,17 +12,20 @@ import { authController } from "@/modules/auth/auth.controller";
 import { authProvidersController } from "@/modules/auth/providers.controller";
 import { securityController } from "@/modules/auth/security.controller";
 import { autoApplyController } from "@/modules/auto-apply/auto-apply.controller";
+import { policyPreviewController } from "@/modules/auto-apply/preview/preview.controller";
 import { campaignController } from "@/modules/campaign/campaign.controller";
 import { campaignJobController } from "@/modules/campaign/jobs/job.controller";
 import { captchaController } from "@/modules/captcha/captcha.controller";
 import { contactController } from "@/modules/contact/contact.controller";
 import { coverLetterController } from "@/modules/cover-letter/cover-letter.controller";
 import { credentialController } from "@/modules/credential/credential.controller";
+import { discoveryController } from "@/modules/discovery/discovery.controller";
 import { emailAccountController } from "@/modules/email/account/account.controller";
 import { emailMessagesController } from "@/modules/email/messages.controller";
 import { emailOAuthController } from "@/modules/email/oauth.controller";
 import { executionController } from "@/modules/execution/execution.controller";
 import { healthController } from "@/modules/health/health.controller";
+import { informationBankController } from "@/modules/information-bank/information-bank.controller";
 import { ingestionController } from "@/modules/ingestion/ingestion.controller";
 import { adminBoardController } from "@/modules/job-board/admin-board.controller";
 import { jobBoardController } from "@/modules/job-board/job-board.controller";
@@ -41,7 +44,9 @@ import { pilotSearchController } from "@/modules/pilot/search.controller";
 import { expiryJob } from "@/modules/pilot/tasks/expiry.job";
 import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
+import { preparationController } from "@/modules/preparation/preparation.controller";
 import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
+import { resumeReviewController } from "@/modules/resume/review/resume-review.controller";
 import { resumeVariantController } from "@/modules/resume/variants/variant.controller";
 import { scoringController } from "@/modules/scoring/scoring.controller";
 import { publicStatsController } from "@/modules/stats/stats.controller";
@@ -71,8 +76,12 @@ const app = new Elysia()
       .use(authProvidersController)
       .use(healthController)
       .use(ingestionController)
+      .use(discoveryController)
+      .use(informationBankController)
       .use(executionController)
       .use(autoApplyController)
+      .use(policyPreviewController)
+      .use(preparationController)
       .use(jobBoardController)
       .use(credentialController)
       .use(contactController)
@@ -80,6 +89,7 @@ const app = new Elysia()
       .use(captchaController)
       .use(userController)
       .use(resumeController)
+      .use(resumeReviewController)
       .use(resumeVariantController)
       .use(publicResumeController)
       .use(publicJobListingController)

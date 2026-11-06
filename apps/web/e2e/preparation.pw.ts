@@ -1,0 +1,124 @@
+import { expect, test } from "@playwright/test";
+
+const fixtureApi = "http://127.0.0.1:4491";
+test.beforeEach(async ({ context, request }) => {
+  await request.post(`${fixtureApi}/test/reset`);
+  await context.route("**/*", (route) =>
+    ["http://127.0.0.1:4100", fixtureApi].includes(new URL(route.request().url()).origin)
+      ? route.continue()
+      : route.abort(),
+  );
+  await context.routeWebSocket("**/*", (socket) => {
+    if (new URL(socket.url()).port === "4100") socket.connectToServer();
+    else socket.close();
+  });
+});
+
+test("reviews unknown answers and exceptions before recording a clearly simulated application", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/preparation");
+  await expect(page.getByText(/DRY_RUN MVP — no applications will be submitted/)).toBeVisible();
+  await page.getByRole("combobox", { name: "Discovery batch", exact: true }).click();
+  await page.getByRole("option").filter({ hasText: "1 jobs" }).click();
+  await page.getByRole("combobox", { name: "Job to prepare", exact: true }).click();
+  await page
+    .getByRole("option", { name: "Program Manager · Policy Fixture Employer", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Prepare dry-run application", exact: true }).click();
+  await expect(
+    page.getByText("Describe your experience leading cross-functional teams.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("What is your preferred contact email?", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Will you require sponsorship?", { exact: true })).toBeVisible();
+  await expect(page.getByText(/sensitive: exact job approval required/)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Run confined simulation", exact: true }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Approve dry-run exceptions", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(
+    (await (await request.get(`${fixtureApi}/test/state`)).json()).preparationSimulations,
+  ).toBe(0);
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Approve dry-run exceptions", exact: true })
+    .click();
+  await expect(
+    page.getByText("Exceptions approved for this simulation revision.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Run confined simulation", exact: true }),
+  ).toBeDisabled();
+  await request.post(`${fixtureApi}/test/approve-preparation-answer`);
+  await page.getByRole("button", { name: "Refresh approved answers", exact: true }).click();
+  await expect(page.getByText(/Approved Information Bank entry.*version 2/)).toBeVisible();
+  await page.getByRole("button", { name: "Run confined simulation", exact: true }).click();
+  expect(
+    (await (await request.get(`${fixtureApi}/test/state`)).json()).preparationSimulations,
+  ).toBe(0);
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Run simulation", exact: true })
+    .click();
+  await expect(
+    page.getByText(
+      "Simulation complete. No application was submitted. Final submission controls were blocked.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  expect(
+    (await (await request.get(`${fixtureApi}/test/state`)).json()).preparationSimulations,
+  ).toBe(1);
+  await expect(page.getByText(/Optional · boolean · review/)).toBeVisible();
+  await expect(page.getByText(/Approved Information Bank entry.*version 1/)).toBeVisible();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).answerHistoryReads).toBe(0);
+  await expect(page.getByText("Archived private preparation answer", { exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("button", { name: "Review historical answers", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Reveal private historical answers?");
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).answerHistoryReads).toBe(0);
+  await page.getByRole("button", { name: "Reveal historical answers", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Archived private preparation answer");
+  await expect(page.getByRole("dialog")).toContainText("do not authorize answer reuse");
+  await expect(page.getByRole("dialog")).toContainText("version 2");
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.getByText("Archived private preparation answer", { exact: true })).toHaveCount(
+    0,
+  );
+  await request.post(`${fixtureApi}/test/reference-only-preparation-history`);
+  await page.getByRole("button", { name: "Review historical answers", exact: true }).click();
+  await page.getByRole("button", { name: "Reveal historical answers", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Reference-only history; no answer values archived.",
+  );
+  await expect(page.getByText("Archived private preparation answer", { exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).answerHistoryReads).toBe(2);
+  await page.getByRole("button", { name: "Open existing preparation", exact: true }).click();
+  await expect(page.getByText(/Simulation complete. No application was submitted./)).toBeVisible();
+  expect((await (await request.get(`${fixtureApi}/test/state`)).json()).preparationCreates).toBe(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});
+
+test("directs disabled Pilot users to preparation without installation or mailbox setup", async ({
+  page,
+}) => {
+  await page.goto("/pilot");
+  await expect(page.getByText(/Autonomous Pilot execution is disabled/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Install the agent", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Connect Gmail", exact: true })).toHaveCount(0);
+  await page.getByRole("link", { name: "Open Application Preparation", exact: true }).click();
+  await expect(page).toHaveURL(/\/preparation$/);
+  await expect(
+    page.getByRole("button", { name: "Prepare dry-run application", exact: true }),
+  ).toBeDisabled();
+});

@@ -2,6 +2,7 @@ import "./globals.css";
 import type { PropsWithChildren, ReactElement } from "react";
 import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
+import { PwaSupport } from "@/components/pwa-support";
 import { SITE_URL } from "@/lib/constants";
 import { AgentProvider } from "@/providers/agent-provider";
 import { ConfirmProvider } from "@/providers/confirm-provider";
@@ -80,6 +81,7 @@ export default function RootLayout(props: PropsWithChildren): ReactElement {
   return (
     <html lang="en" className={`${archivo.variable} ${jetbrainsMono.variable}`}>
       <body suppressHydrationWarning>
+        <PwaSupport />
         <ThemeProvider>
           <QueryProvider>
             <ToastProvider>

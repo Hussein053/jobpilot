@@ -19,7 +19,22 @@ import {
 } from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
 import { CREDENTIAL_KINDS, SERVICE_PROVIDERS } from "@jobpilot/contracts/credential";
+import {
+  DISCOVERY_DELIVERY_STATES,
+  DISCOVERY_EVENTS,
+  DISCOVERY_FAILURES,
+  DISCOVERY_IDENTITY_KINDS,
+  DISCOVERY_TASK_STATES,
+  DISCOVERY_TRIGGERS,
+} from "@jobpilot/contracts/discovery";
 import { CLASSIFICATIONS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
+import {
+  ANSWER_CATEGORIES,
+  ANSWER_EVENT_ACTIONS,
+  ANSWER_INTENTS,
+  ANSWER_SCOPES,
+  ANSWER_STATUSES,
+} from "@jobpilot/contracts/information-bank";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
   CONTACT_DISCOVERY_SOURCES,
@@ -33,6 +48,8 @@ import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
 import { PROMOTION_STATUSES } from "@jobpilot/contracts/pilot/promotion";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
 import { PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot/run";
+import { PREPARATION_EVENTS, PREPARATION_STATUSES } from "@jobpilot/contracts/preparation";
+import { RESUME_REVIEW_ACTIONS } from "@jobpilot/contracts/resume-review";
 import { ROLES } from "@jobpilot/contracts/role";
 import {
   UPWORK_INBOX_KINDS,
@@ -55,6 +72,20 @@ type PrismaEnumName = Exclude<keyof typeof prismaEnums, (typeof API_ONLY)[number
 
 /** A Record over every Prisma enum, so a new one fails typecheck until it has a contracts copy. */
 const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
+  DiscoveryTrigger: DISCOVERY_TRIGGERS,
+  DiscoveryTaskState: DISCOVERY_TASK_STATES,
+  DiscoveryDeliveryState: DISCOVERY_DELIVERY_STATES,
+  DiscoveryIdentityKind: DISCOVERY_IDENTITY_KINDS,
+  DiscoveryFailure: DISCOVERY_FAILURES,
+  DiscoveryEventKind: DISCOVERY_EVENTS,
+  ResumeReviewAction: RESUME_REVIEW_ACTIONS,
+  AnswerIntent: ANSWER_INTENTS,
+  AnswerCategory: ANSWER_CATEGORIES,
+  PreparationStatus: PREPARATION_STATUSES,
+  PreparationEventKind: PREPARATION_EVENTS,
+  AnswerScope: ANSWER_SCOPES,
+  AnswerStatus: ANSWER_STATUSES,
+  AnswerEventAction: ANSWER_EVENT_ACTIONS,
   MissingSalaryPolicy: MISSING_SALARY_POLICIES,
   SearchFrequency: SEARCH_FREQUENCIES,
   ResumeSelection: RESUME_SELECTIONS,

@@ -5,37 +5,8 @@ import { badRequest, conflict, prismaCode, unauthorized, unprocessable } from "@
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { getExecutionPolicy } from "@/modules/execution/execution-policy";
+import { readBoundedBody } from "./bounded-body";
 import { signedHeaders, verifyBatchSignature } from "./signature";
-
-const MAX_BYTES = 65_536;
-
-async function readBatch(request: Request) {
-  if (
-    request.headers.get("content-type")?.split(";")[0]?.trim() !== "application/json" ||
-    (request.headers.get("content-encoding") ?? "identity") !== "identity"
-  ) {
-    throw badRequest("Use uncompressed application/json");
-  }
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  const reader = request.body?.getReader();
-  if (!reader) throw badRequest("Missing batch");
-  try {
-    for (;;) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > MAX_BYTES) {
-        await reader.cancel();
-        throw badRequest("Batch exceeds 65536 bytes");
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  return Buffer.concat(chunks);
-}
 
 @injectable()
 export class IngestionService {
@@ -47,7 +18,7 @@ export class IngestionService {
       where: { id: headers.integrationId },
     });
     if (!integration?.active) throw unauthorized("Invalid ingestion signature");
-    const bytes = await readBatch(request);
+    const bytes = await readBoundedBody(request, 65_536);
     const bodyDigest = verifyBatchSignature(headers, bytes, integration.publicKeyPem);
     let input: unknown;
     try {

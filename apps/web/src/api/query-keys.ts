@@ -1,4 +1,17 @@
 export const queryKeys = {
+  informationBank: {
+    all: ["information-bank"] as const,
+    list: (userId: string, query: unknown) =>
+      [...queryKeys.informationBank.all, userId, "list", query] as const,
+    history: (userId: string, id: string, page: number, limit: number) =>
+      [...queryKeys.informationBank.all, userId, "history", id, page, limit] as const,
+  },
+  autoApply: {
+    all: ["auto-apply"] as const,
+    settings: () => [...queryKeys.autoApply.all, "settings"] as const,
+    audit: (page: number, limit: number) =>
+      [...queryKeys.autoApply.all, "audit", page, limit] as const,
+  },
   auth: {
     all: ["auth"] as const,
     me: () => [...queryKeys.auth.all, "me"] as const,
@@ -142,7 +155,7 @@ export const queryKeys = {
 
 /** Named invalidation sets for useApiMutation's `invalidate:` option. */
 export const invalidations = {
-  resume: [queryKeys.resume.all, queryKeys.user.all],
+  resume: [queryKeys.resume.all, queryKeys.user.all, queryKeys.autoApply.all],
   campaign: [queryKeys.campaigns.all, queryKeys.workspace.all],
   application: [queryKeys.applications.all, queryKeys.dashboard.all],
   // Approving a message can write an application status, so both trees go stale.
